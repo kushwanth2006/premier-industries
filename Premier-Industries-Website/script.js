@@ -324,7 +324,7 @@ document.getElementById("enquiry-form").addEventListener("submit", async functio
   };
 
   try {
-    const response = await fetch("https://premier-backend-6d93.onrender.com/orders", {
+    const response = await fetch("https://premier-backend-6d93.onrender.com/api/orders", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -342,3 +342,4 @@ document.getElementById("enquiry-form").addEventListener("submit", async functio
     alert("Failed to send enquiry. Please try again.");
   }
 });
+
