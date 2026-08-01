@@ -24,8 +24,8 @@ mongoose.connect(process.env.MONGODB_URI)
 // ---------- Email transporter ----------
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT) || 465,
-  secure: true, // true for port 465
+  port: Number(process.env.EMAIL_PORT) || 587,
+  secure: Number(process.env.EMAIL_PORT) === 465, // true only for port 465; false (STARTTLS) for 587
   family: 4, // force IPv4 — avoids ETIMEDOUT on hosts where outbound IPv6 to Gmail doesn't route
   connectionTimeout: 15000,
   greetingTimeout: 15000,
