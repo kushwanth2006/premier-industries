@@ -1,12 +1,11 @@
 require('dotenv').config();
 const dns = require('dns');
 dns.setServers(['8.8.8.8', '1.1.1.1']); // fixes querySrv ECONNREFUSED on networks whose DNS blocks SRV lookups
-dns.setDefaultResultOrder('ipv4first'); // fixes SMTP ETIMEDOUT caused by Node preferring IPv6 on some hosts
 
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const Enquiry = require('./models/Enquiry');
 
 const app = express();
@@ -14,26 +13,30 @@ const PORT = process.env.PORT || 5000;
 
 // ---------- Middleware ----------
 app.use(express.json());
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
+
+const allowedOrigins = (process.env.CLIENT_ORIGIN || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: function(origin, callback){
+    // allow requests with no origin (e.g. curl, server-to-server) and any listed origin
+    if(!origin || allowedOrigins.length === 0 || allowedOrigins.indexOf(origin) !== -1){
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 
 // ---------- MongoDB ----------
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err.message));
 
-// ---------- Email transporter ----------
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT) || 587,
-  secure: Number(process.env.EMAIL_PORT) === 465, // true only for port 465; false (STARTTLS) for 587
-  family: 4, // force IPv4 — avoids ETIMEDOUT on hosts where outbound IPv6 to Gmail doesn't route
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+// ---------- Email (Resend — HTTP API, avoids SMTP ports blocked on some hosts) ----------
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ---------- Routes ----------
 
@@ -54,9 +57,9 @@ app.post('/api/enquiry', async (req, res) => {
     // 1. Save to MongoDB
     const enquiry = await Enquiry.create({ name, company, email, phone, component, message });
 
-    // 2. Send email notification (does not block the response if it fails)
-    transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    // 2. Send email notification via Resend (does not block the response if it fails)
+    resend.emails.send({
+      from: 'Enquiry Bot <onboarding@resend.dev>',
       to: process.env.NOTIFY_EMAIL,
       subject: `New enquiry from ${name}`,
       text: `
