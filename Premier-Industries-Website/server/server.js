@@ -1,6 +1,7 @@
 require('dotenv').config();
 const dns = require('dns');
 dns.setServers(['8.8.8.8', '1.1.1.1']); // fixes querySrv ECONNREFUSED on networks whose DNS blocks SRV lookups
+dns.setDefaultResultOrder('ipv4first'); // fixes SMTP ETIMEDOUT caused by Node preferring IPv6 on some hosts
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -17,27 +18,23 @@ app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
 
 // ---------- MongoDB ----------
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.error("MongoDB connection error:", err.message));
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB connection error:', err.message));
+
 // ---------- Email transporter ----------
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT),
-  secure: true,
+  port: Number(process.env.EMAIL_PORT) || 465,
+  secure: true, // true for port 465
+  family: 4, // force IPv4 — avoids ETIMEDOUT on hosts where outbound IPv6 to Gmail doesn't route
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
 });
 
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error("SMTP Error:");
-    console.error(error);
-  } else {
-    console.log("SMTP server is ready to send emails.");
-  }
-});
 // ---------- Routes ----------
 
 // Health check
@@ -91,4 +88,4 @@ app.get('/api/enquiry', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
