@@ -1,4 +1,4 @@
-  // Smooth-scroll for in-page nav links (fallback for older browsers already covered by CSS)
+// Smooth-scroll for in-page nav links (fallback for older browsers already covered by CSS)
   document.querySelectorAll('a[href^="#"]').forEach(function(link){
     link.addEventListener('click', function(e){
       var id = this.getAttribute('href').slice(1);
@@ -21,7 +21,7 @@
   // Enquiry form submit — sends data to the backend API (server/server.js)
   var form = document.getElementById('enquiry-form');
   var msg = document.getElementById('form-msg');
-  var API_BASE = "https://premier-industries-backend.onrender.com"; // Your Render backend URL// must match PORT in server/.env
+  var API_BASE = 'https://premier-industries-backend.onrender.com'; // deployed backend on Render
 
   if(form){
     form.addEventListener('submit', function(e){
