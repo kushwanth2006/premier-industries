@@ -1,360 +1,87 @@
-// Smooth-scroll for in-page nav links (fallback for older browsers already covered by CSS)
-  document.querySelectorAll('a[href^="#"]').forEach(function(link){
-    link.addEventListener('click', function(e){
-      var id = this.getAttribute('href').slice(1);
-      var target = document.getElementById(id);
-      if(target){
-        e.preventDefault();
-        target.scrollIntoView({behavior:'smooth', block:'start'});
-      }
-    });
-  });
+require('dotenv').config();
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']); // fixes querySrv ECONNREFUSED on networks whose DNS blocks SRV lookups
 
-  // Product card active-state toggle
-  document.querySelectorAll('.product-card').forEach(function(card){
-    card.addEventListener('click', function(){
-      document.querySelectorAll('.product-card').forEach(function(c){ c.classList.remove('active'); });
-      card.classList.add('active');
-    });
-  });
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const nodemailer = require('nodemailer');
+const Enquiry = require('./models/Enquiry');
 
-  // Enquiry form submit — sends data to the backend API (server/server.js)
-  var form = document.getElementById('enquiry-form');
-  var msg = document.getElementById('form-msg');
-  var API_BASE = 'https://premier-industries-backend.onrender.com'; // deployed backend on Render
+const app = express();
+const PORT = process.env.PORT || 5001;
 
-  if(form){
-    form.addEventListener('submit', function(e){
-      e.preventDefault();
+// ---------- Middleware ----------
+app.use(express.json());
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
 
-      var payload = {
-        name: document.getElementById('fname').value,
-        company: document.getElementById('fcompany').value,
-        email: document.getElementById('femail').value,
-        phone: document.getElementById('fphone').value,
-        component: document.getElementById('fcomponent').value,
-        message: document.getElementById('fmsg').value
-      };
+// ---------- MongoDB ----------
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB connection error:', err.message));
 
-      var submitBtn = form.querySelector('.submit-btn');
-      var originalText = submitBtn ? submitBtn.textContent : '';
-      if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
-
-      fetch(API_BASE + '/api/enquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-        .then(function(res){ return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
-        .then(function(result){
-          if(result.ok){
-            msg.textContent = "Thanks — your enquiry has been noted. We'll be in touch shortly.";
-            msg.classList.add('show');
-            form.reset();
-          } else {
-            msg.textContent = result.data.error || 'Something went wrong. Please try again.';
-            msg.classList.add('show');
-          }
-        })
-        .catch(function(){
-          msg.textContent = 'Could not reach the server. Please check your connection and try again.';
-          msg.classList.add('show');
-        })
-        .finally(function(){
-          if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = originalText; }
-          setTimeout(function(){ msg.classList.remove('show'); }, 5000);
-        });
-    });
+// ---------- Email transporter ----------
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT) || 465,
+  secure: true, // true for port 465
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
+});
 
-  // ---------------------------------------------------------------
-  // Scroll animations — Intersection Observer
-  // Reveals .animate / .stagger elements once as they enter the
-  // viewport. Stagger delays (150-200ms) are computed automatically
-  // per sibling group so card grids cascade in.
-  // ---------------------------------------------------------------
-  (function initScrollAnimations(){
-    var staggerEls = document.querySelectorAll('.stagger');
-    var groups = new Map();
+// ---------- Routes ----------
 
-    staggerEls.forEach(function(el){
-      var parent = el.parentElement;
-      if(!groups.has(parent)) groups.set(parent, []);
-      groups.get(parent).push(el);
-    });
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
-    groups.forEach(function(members){
-      members.forEach(function(el, i){
-        el.style.transitionDelay = (i * 160) + 'ms';
-      });
-    });
+// Create a new enquiry
+app.post('/api/enquiry', async (req, res) => {
+  try {
+    const { name, company, email, phone, component, message } = req.body;
 
-    var targets = document.querySelectorAll('.animate:not(.capacity-card), .stagger, .tl-reveal');
-
-    if(!('IntersectionObserver' in window)){
-      // Fallback: just show everything immediately
-      targets.forEach(function(el){ el.classList.add('show'); });
-      return;
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required.' });
     }
 
-    var observer = new IntersectionObserver(function(entries, obs){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting){
-          entry.target.classList.add('show');
-          obs.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold: 0.15,
-      rootMargin: '0px 0px -60px 0px'
-    });
+    // 1. Save to MongoDB
+    const enquiry = await Enquiry.create({ name, company, email, phone, component, message });
 
-    targets.forEach(function(el){ observer.observe(el); });
-  })();
+    // 2. Send email notification (does not block the response if it fails)
+    transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: process.env.NOTIFY_EMAIL,
+      subject: `New enquiry from ${name}`,
+      text: `
+New enquiry received:
 
-  // ---------------------------------------------------------------
-  // Mobile nav toggle — hamburger opens/closes the dropdown menu.
-  // Closes automatically on link click, outside click, Escape, or
-  // if the viewport is resized back up to desktop width.
-  // ---------------------------------------------------------------
-  (function initMobileNav(){
-    var nav = document.querySelector('.site-nav');
-    var toggle = document.getElementById('nav-toggle');
-    var links = document.getElementById('nav-links');
-    if(!nav || !toggle || !links) return;
+Name: ${name}
+Company: ${company || '-'}
+Email: ${email}
+Phone: ${phone || '-'}
+Component: ${component || '-'}
+Message: ${message || '-'}
+      `.trim()
+    }).catch(err => console.error('Email send failed:', err.message));
 
-    function closeMenu(){
-      nav.classList.remove('nav-open');
-      toggle.setAttribute('aria-expanded', 'false');
-    }
-    function openMenu(){
-      nav.classList.add('nav-open');
-      toggle.setAttribute('aria-expanded', 'true');
-    }
+    res.status(201).json({ success: true, enquiry });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+});
 
-    toggle.addEventListener('click', function(){
-      if(nav.classList.contains('nav-open')) closeMenu(); else openMenu();
-    });
+// (Optional) list all enquiries — useful for testing / a future admin page
+app.get('/api/enquiry', async (req, res) => {
+  try {
+    const enquiries = await Enquiry.find().sort({ createdAt: -1 });
+    res.json(enquiries);
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch enquiries.' });
+  }
+});
 
-    links.querySelectorAll('a').forEach(function(a){
-      a.addEventListener('click', closeMenu);
-    });
-
-    document.addEventListener('click', function(e){
-      if(nav.classList.contains('nav-open') && !nav.contains(e.target)) closeMenu();
-    });
-
-    document.addEventListener('keydown', function(e){
-      if(e.key === 'Escape') closeMenu();
-    });
-
-    window.addEventListener('resize', function(){
-      if(window.innerWidth > 960) closeMenu();
-    });
-  })();
-
-  // ---------------------------------------------------------------
-  // Sticky nav — adds a shadow/condensed state once the page scrolls
-  // ---------------------------------------------------------------
-  (function initNavScroll(){
-    var nav = document.querySelector('.site-nav');
-    if(!nav) return;
-    function onScroll(){
-      if(window.scrollY > 8){
-        nav.classList.add('scrolled');
-      } else {
-        nav.classList.remove('scrolled');
-      }
-    }
-    onScroll();
-    window.addEventListener('scroll', onScroll, {passive:true});
-  })();
-
-  // ---------------------------------------------------------------
-  // Count-up numbers — animates any [data-target] element from 0 to
-  // its target once it scrolls into view. Supports data-format="indian"
-  // for lakh-style comma grouping (e.g. 300000 -> 3,00,000).
-  // ---------------------------------------------------------------
-  (function initCountUp(){
-    var els = document.querySelectorAll('.count-up[data-target]');
-    if(!els.length) return;
-
-    function formatIndian(n){
-      var s = String(Math.round(n));
-      if(s.length <= 3) return s;
-      var last3 = s.slice(-3);
-      var rest = s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-      return rest + ',' + last3;
-    }
-
-    function animate(el){
-      var target = parseFloat(el.getAttribute('data-target')) || 0;
-      var format = el.getAttribute('data-format');
-      var duration = 1400;
-      var start = null;
-
-      function frame(ts){
-        if(start === null) start = ts;
-        var progress = Math.min((ts - start) / duration, 1);
-        var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-        var value = target * eased;
-        el.textContent = format === 'indian' ? formatIndian(value) : Math.round(value);
-        if(progress < 1){
-          requestAnimationFrame(frame);
-        } else {
-          el.textContent = format === 'indian' ? formatIndian(target) : target;
-        }
-      }
-      requestAnimationFrame(frame);
-    }
-
-    if(!('IntersectionObserver' in window)){
-      els.forEach(animate);
-      return;
-    }
-
-    var observer = new IntersectionObserver(function(entries, obs){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting){
-          animate(entry.target);
-          obs.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.4 });
-
-    els.forEach(function(el){ observer.observe(el); });
-  })();
-
-  // ---------------------------------------------------------------
-  // Hero "conveyor" — cycles a highlight across the live process
-  // chips (Jigging → Degreasing → ... → Drying) to suggest motion
-  // through an active production line.
-  // ---------------------------------------------------------------
-  (function initHeroConveyor(){
-    var flow = document.getElementById('hero-flow');
-    if(!flow) return;
-    var chips = Array.prototype.slice.call(flow.querySelectorAll('.chip'));
-    var arrows = Array.prototype.slice.call(flow.querySelectorAll('.flow-arrow'));
-    if(!chips.length) return;
-    var i = 0;
-
-    function tick(){
-      chips.forEach(function(c){ c.classList.remove('chip-active'); });
-      arrows.forEach(function(a){ a.classList.remove('arrow-active'); });
-      chips[i].classList.add('chip-active');
-      if(arrows[i - 1]) arrows[i - 1].classList.add('arrow-active');
-      i = (i + 1) % chips.length;
-    }
-    tick();
-    setInterval(tick, 1100);
-  })();
-
-  // ---------------------------------------------------------------
-  // Process flow section — once visible, loops a highlight through
-  // each of the 8 real stages (skips the empty filler cells) to read
-  // like current flowing down the line.
-  // ---------------------------------------------------------------
-  (function initProcessLine(){
-    var grid = document.querySelector('.process-grid');
-    if(!grid) return;
-    var steps = Array.prototype.slice.call(grid.querySelectorAll('.process-step:not(.filler)'));
-    if(!steps.length) return;
-    var i = 0;
-    var intervalId = null;
-
-    function tick(){
-      steps.forEach(function(s){ s.classList.remove('step-active'); });
-      steps[i].classList.add('step-active');
-      i = (i + 1) % steps.length;
-    }
-
-    function start(){
-      if(intervalId) return;
-      tick();
-      intervalId = setInterval(tick, 900);
-    }
-
-    if(!('IntersectionObserver' in window)){
-      start();
-      return;
-    }
-
-    var observer = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting) start();
-      });
-    }, { threshold: 0.3 });
-
-    observer.observe(grid);
-  })();
-
-  // ---------------------------------------------------------------
-  // Replaying progress bars — the capacity-card's .bar-fill elements
-  // fill from 0% to their target width via CSS transition (driven by
-  // the .capacity-card.show rule in style.css). Unlike the generic
-  // .animate/.stagger system, this is NOT one-shot: it resets and
-  // replays every time the card re-enters the viewport, AND on a
-  // full page load/revisit — including browser back/forward restores
-  // from bfcache, which don't re-run scripts on their own.
-  // ---------------------------------------------------------------
-  (function initReplayingBars(){
-    var cards = document.querySelectorAll('.capacity-card');
-    if(!cards.length) return;
-
-    function reset(card){
-      card.classList.remove('show');
-      // Reading a layout property forces the browser to apply the
-      // width:0 state immediately. Without this, removing and
-      // re-adding "show" in the same tick gets batched by the
-      // browser and the transition never visibly restarts.
-      void card.offsetWidth;
-    }
-
-    function play(card){
-      reset(card);
-      // Wait a couple of frames so the reset actually paints before
-      // we re-trigger the transition to the target width.
-      requestAnimationFrame(function(){
-        requestAnimationFrame(function(){
-          card.classList.add('show');
-        });
-      });
-    }
-
-    function isInViewport(card){
-      var rect = card.getBoundingClientRect();
-      return rect.top < window.innerHeight && rect.bottom > 0;
-    }
-
-    if(!('IntersectionObserver' in window)){
-      // Fallback: just fill immediately, no replay capability
-      cards.forEach(function(card){ card.classList.add('show'); });
-      return;
-    }
-
-    // Replays every time a card scrolls into/out of view
-    var observer = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting){
-          play(entry.target);
-        } else {
-          reset(entry.target); // re-arm so it's ready to replay next entry
-        }
-      });
-    }, {
-      threshold: 0.3,
-      rootMargin: '0px 0px -60px 0px'
-    });
-
-    cards.forEach(function(card){ observer.observe(card); });
-
-    // Handles browser back/forward navigation restored from bfcache,
-    // where the page reappears without scripts re-running from scratch.
-    window.addEventListener('pageshow', function(e){
-      if(e.persisted){
-        cards.forEach(function(card){
-          if(isInViewport(card)) play(card); else reset(card);
-        });
-      }
-    });
-  })();
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
