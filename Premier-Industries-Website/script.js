@@ -21,7 +21,7 @@
   // Enquiry form submit — sends data to the backend API (server/server.js)
   var form = document.getElementById('enquiry-form');
   var msg = document.getElementById('form-msg');
-  var API_BASE = 'http://localhost:5001'; // must match PORT in server/.env
+  var API_BASE = "https://premier-industries-backend.onrender.com"; // Your Render backend URL// must match PORT in server/.env
 
   if(form){
     form.addEventListener('submit', function(e){
