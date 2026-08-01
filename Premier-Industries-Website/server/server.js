@@ -72,7 +72,15 @@ Phone: ${phone || '-'}
 Component: ${component || '-'}
 Message: ${message || '-'}
       `.trim()
-    }).catch(err => console.error('Email send failed:', err.message));
+    }).then(function(result){
+      if(result.error){
+        console.error('Email send failed (Resend API error):', JSON.stringify(result.error));
+      } else {
+        console.log('Email sent successfully:', result.data && result.data.id);
+      }
+    }).catch(function(err){
+      console.error('Email send failed (exception):', err.message);
+    });
 
     res.status(201).json({ success: true, enquiry });
   } catch (err) {
