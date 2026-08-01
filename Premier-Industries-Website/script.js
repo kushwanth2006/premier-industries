@@ -18,7 +18,54 @@
     });
   });
 
+  // Enquiry form submit — sends data to the backend API (server/server.js)
+  var form = document.getElementById('enquiry-form');
+  var msg = document.getElementById('form-msg');
+  var API_BASE = 'http://localhost:5001'; // must match PORT in server/.env
 
+  if(form){
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+
+      var payload = {
+        name: document.getElementById('fname').value,
+        company: document.getElementById('fcompany').value,
+        email: document.getElementById('femail').value,
+        phone: document.getElementById('fphone').value,
+        component: document.getElementById('fcomponent').value,
+        message: document.getElementById('fmsg').value
+      };
+
+      var submitBtn = form.querySelector('.submit-btn');
+      var originalText = submitBtn ? submitBtn.textContent : '';
+      if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+
+      fetch(API_BASE + '/api/enquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function(res){ return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
+        .then(function(result){
+          if(result.ok){
+            msg.textContent = "Thanks — your enquiry has been noted. We'll be in touch shortly.";
+            msg.classList.add('show');
+            form.reset();
+          } else {
+            msg.textContent = result.data.error || 'Something went wrong. Please try again.';
+            msg.classList.add('show');
+          }
+        })
+        .catch(function(){
+          msg.textContent = 'Could not reach the server. Please check your connection and try again.';
+          msg.classList.add('show');
+        })
+        .finally(function(){
+          if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = originalText; }
+          setTimeout(function(){ msg.classList.remove('show'); }, 5000);
+        });
+    });
+  }
 
   // ---------------------------------------------------------------
   // Scroll animations — Intersection Observer
@@ -311,35 +358,3 @@
       }
     });
   })();
-document.getElementById("enquiry-form").addEventListener("submit", async function(e) {
-  e.preventDefault();
-
-  const data = {
-    name: document.getElementById("fname").value,
-    company: document.getElementById("fcompany").value,
-    email: document.getElementById("femail").value,
-    phone: document.getElementById("fphone").value,
-    component: document.getElementById("fcomponent").value,
-    message: document.getElementById("fmsg").value
-  };
-
-  try {
-    const response = await fetch("https://premier-backend-6d93.onrender.com/api/orders", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
-    });
-
-    const result = await response.json();
-
-    document.getElementById("form-msg").style.display = "block";
-    document.getElementById("enquiry-form").reset();
-
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Failed to send enquiry. Please try again.");
-  }
-});
-
