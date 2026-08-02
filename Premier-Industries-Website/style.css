@@ -1,4 +1,4 @@
-  :root{
+:root{
     --navy-950:#101b30;
     --navy-900:#152540;
     --navy-800:#1b2f4f;
@@ -15,6 +15,9 @@
     --amber-bg:#fbf1de;
     --amber-border:#e9d3a3;
     --green:#3bc47d;
+    --header-bg:#1c1e24;
+    --header-border:rgba(255,255,255,.08);
+    --footer-bg:#15161a;
     --radius-lg:16px;
     --radius-md:12px;
     --radius-sm:8px;
@@ -65,34 +68,46 @@
   /* ---------- NAV ---------- */
   header.site-nav{
     position:sticky;top:0;z-index:100;
-    background:var(--navy-900);
-    border-bottom:1px solid rgba(255,255,255,.06);
+    background:var(--header-bg);
+    border-bottom:1px solid var(--header-border);
   }
   .nav-inner{
-    max-width:1180px;margin:0 auto;padding:16px 0px;
+    max-width:1180px;margin:0 auto;padding:10px 0px;
     display:flex;align-items:center;justify-content:space-between;
   }
-  .brand{display:flex;align-items:center;gap:12px;}
-  .brand-mark{
-    width:38px;height:38px;border-radius:9px;
-    background:linear-gradient(155deg,var(--blue-500),var(--navy-700));
-    color:#fff;font-family:var(--font-display);font-weight:700;font-size:16px;
+  .brand{display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .logo-box{
+    flex:none;
+    width:52px;height:52px;
     display:flex;align-items:center;justify-content:center;
-    letter-spacing:.02em;
+    background:#fff;
+    border-radius:50%;
+    border:1px solid rgba(16,27,48,.08);
+    overflow:hidden;
   }
+  .brand-logo{height:46px;width:auto;display:block;}
   .brand-text .name{font-size:15.5px;font-weight:700;color:#fff;line-height:1.2;}
   .brand-text .tag{font-size:9.5px;letter-spacing:.12em;color:var(--slate-300);font-weight:600;}
-  nav.links{display:flex;align-items:center;gap:34px;}
+  nav.links{display:flex;align-items:center;gap:6px;}
   nav.links a.nav-link{
+    position:relative;
     font-size:14px;font-weight:500;color:var(--slate-300);
-    transition:color .15s ease;
+    border:none;
+    border-radius:999px;
+    padding:9px 16px;
+    transition:color .2s ease, background-color .2s ease;
   }
-  a.nav-link{
-    border:1px solid #152540;
-    border-radius: 8px;
-    padding:9px 6px 9px 6px;
+  nav.links a.nav-link:hover{
+    color:#fff;
+    background-color:rgba(255,255,255,.08);
   }
-  nav.links a.nav-link:hover{color:#fff; background-color: #1459d1; }
+  nav.links a.nav-link.active{
+    color:#fff;
+    background-color:rgba(77,139,255,.16);
+  }
+  nav.links a.nav-link:active{
+    background-color:rgba(255,255,255,.12);
+  }
 
   /* Hamburger toggle — hidden on desktop, shown at the tablet/mobile breakpoint */
   .nav-toggle{
@@ -458,7 +473,7 @@
   .form-msg.show{display:block;}
 
   /* ---------- FOOTER ---------- */
-  footer{background:var(--navy-950);color:var(--slate-300);padding:64px 0 0;}
+  footer{background:var(--footer-bg);color:var(--slate-300);padding:64px 0 0;}
   .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:40px;padding-bottom:44px;}
   .footer-brand p{font-size:13.5px;line-height:1.7;color:var(--slate-300);margin-top:16px;max-width:280px;}
   .footer-col h4{font-size:12px;font-weight:700;letter-spacing:.1em;color:#fff;text-transform:uppercase;margin-bottom:18px;}
@@ -492,7 +507,7 @@
       flex-direction:column;
       align-items:stretch;
       gap:0;
-      background:var(--navy-900);
+      background:var(--header-bg);
       border-bottom:1px solid rgba(255,255,255,.08);
       max-height:0;
       overflow:hidden;
@@ -507,12 +522,12 @@
     }
     nav.links a.nav-link{
       width:100%;
-      padding:14px 4px;
-      border:none;
+      padding:14px 6px;
       border-bottom:1px solid rgba(255,255,255,.06);
       border-radius:0;
     }
     nav.links a.nav-link:hover{background:transparent;color:#fff;}
+    nav.links a.nav-link.active{background:transparent;color:var(--blue-400);}
     nav.links .btn{margin-top:14px;width:100%;}
   }
   @media (max-width:600px){
@@ -534,9 +549,24 @@
 
   :focus-visible{outline:2px solid var(--blue-400);outline-offset:2px;}
   @media (prefers-reduced-motion: reduce){
-    *{transition:none !important;}
     .animate, .stagger{opacity:1 !important;transform:none !important;}
   }
+
+  /* ---------- HERO ENTRANCE ---------- */
+  @keyframes heroIn{
+    from{opacity:0; transform:translateY(16px);}
+    to{opacity:1; transform:none;}
+  }
+  .hero-in{
+    opacity:0;
+    animation:heroIn .7s cubic-bezier(.16,.8,.3,1) forwards;
+  }
+  .hero-in-1{animation-delay:.05s;}
+  .hero-in-2{animation-delay:.15s;}
+  .hero-in-3{animation-delay:.25s;}
+  .hero-in-4{animation-delay:.35s;}
+  .hero-in-5{animation-delay:.45s;}
+  .hero-in-6{animation-delay:.2s;}
 
 /* =====================================================
    SCROLL ANIMATIONS
@@ -713,6 +743,27 @@
 }
 
 @media (prefers-reduced-motion: reduce){
-  .live-dot, .hero-in, .tl-year{animation:none !important;}
-  .bar-fill, .btn, .submit-btn, .flow-row .chip, .process-step{transition:none !important;}
+  .live-dot, .tl-year{animation:none !important;}
+}
+
+/* =====================================================
+   PAGE / VIEW TRANSITIONS
+   showView() in script.js toggles the .view-active class
+   instead of hard-swapping display, so every "page" change
+   fades and lifts in smoothly rather than snapping instantly.
+===================================================== */
+.view{
+  display:none;
+}
+.view.view-active{
+  display:block;
+  animation:viewEnter .5s cubic-bezier(.16,.8,.3,1);
+}
+@keyframes viewEnter{
+  from{opacity:0; transform:translateY(14px);}
+  to{opacity:1; transform:none;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .view.view-active{animation:none;}
 }
