@@ -1,4 +1,73 @@
-// Smooth-scroll for in-page nav links (fallback for older browsers already covered by CSS)
+// ---------------------------------------------------------------
+  // Page-style view switching — only one "view" (landing, about,
+  // process, products, facilities, clients, contact) is shown at a
+  // time. Nav links, the logo, footer links, and in-page CTA buttons
+  // all call showView() instead of scrolling to an anchor.
+  // ---------------------------------------------------------------
+  var navLinkMap = {
+    'view-about': 0,
+    'view-process': 1,
+    'view-products': 2,
+    'view-facilities': 3,
+    'view-clients': 4,
+    'view-contact': 5
+  };
+
+  function showView(viewId){
+    var views = document.querySelectorAll('.view');
+    views.forEach(function(v){
+      if(v.id === viewId){
+        // Force a reflow before re-adding the class so the enter
+        // animation restarts every time, even when navigating back
+        // to a view that's already been shown before.
+        v.classList.remove('view-active');
+        void v.offsetWidth;
+        v.classList.add('view-active');
+      } else {
+        v.classList.remove('view-active');
+      }
+    });
+
+    // Update active state on the desktop/mobile nav links
+    var navLinks = document.querySelectorAll('#nav-links .nav-link');
+    navLinks.forEach(function(link){ link.classList.remove('active'); });
+    if(navLinkMap.hasOwnProperty(viewId) && navLinks[navLinkMap[viewId]]){
+      navLinks[navLinkMap[viewId]].classList.add('active');
+    }
+
+    // Reset scroll position for the newly shown "page"
+    window.scrollTo(0, 0);
+
+    // Immediately reveal scroll-triggered animation elements within
+    // the new view, since IntersectionObserver may not have observed
+    // them while the view was display:none.
+    var target = document.getElementById(viewId);
+    if(target){
+      target.querySelectorAll('.animate, .stagger, .tl-reveal').forEach(function(el){
+        el.classList.add('show');
+      });
+      target.querySelectorAll('.capacity-card').forEach(function(card){
+        card.classList.remove('show');
+        void card.offsetWidth;
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){ card.classList.add('show'); });
+        });
+      });
+    }
+
+    // Close the mobile nav dropdown if it was open
+    var nav = document.querySelector('.site-nav');
+    if(nav) nav.classList.remove('nav-open');
+    var toggle = document.getElementById('nav-toggle');
+    if(toggle) toggle.setAttribute('aria-expanded', 'false');
+  }
+
+  // Show only the landing view on first load
+  document.addEventListener('DOMContentLoaded', function(){
+    showView('view-landing');
+  });
+
+  // Smooth-scroll for in-page nav links (fallback for older browsers already covered by CSS)
   document.querySelectorAll('a[href^="#"]').forEach(function(link){
     link.addEventListener('click', function(e){
       var id = this.getAttribute('href').slice(1);
