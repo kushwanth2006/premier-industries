@@ -1,429 +1,569 @@
-// ---------------------------------------------------------------
-  // Page-style view switching — only one "view" (landing, about,
-  // process, products, facilities, clients, contact) is shown at a
-  // time. Nav links, the logo, footer links, and in-page CTA buttons
-  // all call showView() instead of scrolling to an anchor.
-  // ---------------------------------------------------------------
-  var navLinkMap = {
-    'view-about': 0,
-    'view-process': 1,
-    'view-products': 2,
-    'view-facilities': 3,
-    'view-clients': 4,
-    'view-contact': 5
-  };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premier Industries | Zinc Electroplating Specialists</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="galary/favicon.png">
+</head>
+<body>
 
-  function showView(viewId){
-    var views = document.querySelectorAll('.view');
-    views.forEach(function(v){
-      if(v.id === viewId){
-        // Force a reflow before re-adding the class so the enter
-        // animation restarts every time, even when navigating back
-        // to a view that's already been shown before.
-        v.classList.remove('view-active');
-        void v.offsetWidth;
-        v.classList.add('view-active');
-      } else {
-        v.classList.remove('view-active');
-      }
-    });
+<!-- NAV -->
+<header class="site-nav">
+  <div class="nav-inner">
+    <div class="brand" onclick="showView('view-landing'); return false;" role="link" tabindex="0">
+      <div class="logo-box"><img class="brand-logo" src="galary/logo.png" alt="Premier Industries logo"></div>
+      <div class="brand-text">
+        <div class="name">Premier Industries</div>
+        <div class="tag">ZINC ELECTROPLATING SPECIALISTS</div>
+      </div>
+    </div>
+    <nav class="links" id="nav-links">
+      <a class="nav-link" href="#" onclick="showView('view-about'); return false;">About</a>
+      <a class="nav-link" href="#" onclick="showView('view-process'); return false;">Process</a>
+      <a class="nav-link" href="#" onclick="showView('view-products'); return false;">Products</a>
+      <a class="nav-link" href="#" onclick="showView('view-facilities'); return false;">Facilities</a>
+      <a class="nav-link" href="#" onclick="showView('view-clients'); return false;">Clients</a>
+      <a class="btn btn-primary" href="#" onclick="showView('view-contact'); return false;">Contact Us</a>
+    </nav>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
 
-    // Update active state on the desktop/mobile nav links
-    var navLinks = document.querySelectorAll('#nav-links .nav-link');
-    navLinks.forEach(function(link){ link.classList.remove('active'); });
-    if(navLinkMap.hasOwnProperty(viewId) && navLinks[navLinkMap[viewId]]){
-      navLinks[navLinkMap[viewId]].classList.add('active');
-    }
+<!-- LANDING VIEW -->
+<div id="view-landing" class="view view-active">
+<section class="hero ">
+  <div class="container hero-grid">
+    <div>
+      <div class="badge-pill hero-in hero-in-1">ISO 9001:2015 &amp; IATF 16949 Certified</div>
+      <h1 class="hero-in hero-in-2">Surface Treatment <span class="accent">Excellence Since 1995</span></h1>
+      <p class="lead hero-in hero-in-3">Premier Industries is Chennai's leading zinc electroplating specialist, serving Hyundai, KIA, TAFE, and India's top automotive OEMs with fully automated, world-class surface treatment solutions.</p>
+      <div class="hero-ctas hero-in hero-in-4">
+        <a href="#" class="btn btn-primary" onclick="showView('view-contact'); return false;">Request a Quote</a>
+        <a href="#" class="btn btn-ghost-dark" onclick="showView('view-process'); return false;">View Our Process →</a>
+      </div>
+      <div class="stat-row hero-in hero-in-5">
+        <div class="stat"><div class="num"><span class="count-up" data-target="30">0</span><sup>+</sup></div><div class="label">Years Experience</div></div>
+        <div class="stat"><div class="num"><span class="count-up" data-target="3">0</span>L</div><div class="label">Units / Month</div></div>
+        <div class="stat"><div class="num"><span class="count-up" data-target="100">0</span></div><div class="label">Employees</div></div>
+      </div>
+    </div>
 
-    // Reset scroll position for the newly shown "page"
-    window.scrollTo(0, 0);
+    <div class="hero-in hero-in-6">
+      <div class="hero-card">
+        <div class="live-tag"><span class="live-dot"></span> Live Production — Plant 1, Thirumazhisai</div>
+        <div class="flow-row" id="hero-flow" onclick="showView('view-process')" style="cursor:pointer;" title="View our full process">
+          <span class="chip">Jigging</span><span class="flow-arrow">→</span>
+          <span class="chip">Degreasing</span><span class="flow-arrow">→</span>
+          <span class="chip">Zinc Plating</span><span class="flow-arrow">→</span>
+          <span class="chip">Passivation</span><span class="flow-arrow">→</span>
+          <span class="chip">Drying</span>
+        </div>
+        <div class="chip-row">
+          <span class="chip chip-amber">ISO 9001:2015</span>
+          <span class="chip chip-amber">IATF 16949</span>
+          <span class="chip chip-amber">SQ Certified</span>
+        </div>
+      </div>
+      <div class="approved-card">
+        <div class="approved-label">Approved By</div>
+        <div class="approved-row">
+          <span class="approved-chip">
+            <a href="https://www.hyundai.com/in/en" target="_blank" rel="noopener noreferrer">HYUNDAI</a>
+          </span>
+          <span class="approved-chip">
+            <a href="https://www.kia.com/in/home.html" target="_blank" rel="noopener noreferrer">KIA MOTORS</a>
+          </span>
+          <span class="approved-chip">
+            <a href="https://www.tafe.com/" target="_blank" rel="noopener noreferrer">TAFE</a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<!-- END LANDING VIEW -->
 
-    // Immediately reveal scroll-triggered animation elements within
-    // the new view, since IntersectionObserver may not have observed
-    // them while the view was display:none.
-    var target = document.getElementById(viewId);
-    if(target){
-      target.querySelectorAll('.animate, .stagger, .tl-reveal').forEach(function(el){
-        el.classList.add('show');
-      });
-      target.querySelectorAll('.capacity-card').forEach(function(card){
-        card.classList.remove('show');
-        void card.offsetWidth;
-        requestAnimationFrame(function(){
-          requestAnimationFrame(function(){ card.classList.add('show'); });
-        });
-      });
-    }
+<!-- ABOUT VIEW -->
+<div id="view-about" class="view">
+<section class="section" id="about">
+  <div class="container about-grid">
+    <div class="about-copy animate left">
+      <div class="eyebrow">Our Story</div>
+      <h2>Built on precision.<br>Grown on trust.</h2>
+      <p>Founded in 1995 as a small-scale partnership with zinc electroplating lines, Premier Industries has evolved into a premier surface treatment company serving the country's largest automotive OEMs. We upgraded to a fully automated zinc plating line in October 2020.</p>
+      <ul class="timeline">
+        <li class="tl-reveal">
+          <div class="tl-year">95</div>
+          <div class="tl-body">
+            <div class="tl-date">1995</div>
+            <div class="tl-text">Established as a partnership unit with zinc electroplating lines at Thirumazhisai SIDCO.</div>
+          </div>
+        </li>
+        <li class="tl-reveal">
+          <div class="tl-year">98</div>
+          <div class="tl-body">
+            <div class="tl-date">August 1998</div>
+            <div class="tl-text">Became sole supplier to Mando Automotive India Pvt. Ltd. for Caliper and Carrier zinc plating — a relationship that continues to this day.</div>
+          </div>
+        </li>
+        <li class="tl-reveal">
+          <div class="tl-year">20</div>
+          <div class="tl-body">
+            <div class="tl-date">October 2020</div>
+            <div class="tl-text">Upgraded to a fully automated zinc plating line supported by Grauer &amp; Weil (India) Ltd., achieving zero breakdown performance.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
 
-    // Close the mobile nav dropdown if it was open
-    var nav = document.querySelector('.site-nav');
-    if(nav) nav.classList.remove('nav-open');
-    var toggle = document.getElementById('nav-toggle');
-    if(toggle) toggle.setAttribute('aria-expanded', 'false');
-  }
+    <div class="feature-cards">
+      <div class="feature-card stagger">
+        <div class="feature-icon">▤</div>
+        <h3>Fully Automated</h3>
+        <p>End-to-end PLC-controlled plating line with zero manual intervention in critical stages.</p>
+      </div>
+      <div class="feature-card stagger">
+        <div class="feature-icon">⌁</div>
+        <h3>Zero Breakdown</h3>
+        <p>Achieved and maintained zero breakdown record with our advanced system facilities.</p>
+      </div>
+      <div class="feature-card stagger">
+        <div class="feature-icon">◔</div>
+        <h3>25-Min Cycle</h3>
+        <p>Industry-leading 25-minute zinc plating process time per 10,000-litre tank cycle.</p>
+      </div>
+      <div class="feature-card stagger">
+        <div class="feature-icon">◎</div>
+        <h3>100+ Employees</h3>
+        <p>A dedicated team of trained professionals covering admin, production, quality and maintenance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<!-- END ABOUT VIEW -->
 
-  // Show only the landing view on first load
-  document.addEventListener('DOMContentLoaded', function(){
-    showView('view-landing');
-  });
+<!-- PROCESS VIEW -->
+<div id="view-process" class="view">
+<section class="section-dark" id="process">
+  <div class="container">
+    <div class="process-head animate right">
+      <div class="eyebrow on-dark">How We Work</div>
+      <h2>Zinc Electroplating Process Flow</h2>
+      <p>Our fully automated, 14-stage process ensures consistent plating quality across every batch with strict chemical monitoring and lab testing at each stage.</p>
+    </div>
+    <div class="process-grid">
+      <div class="process-step stagger"><div class="pnum">01</div><h3>Jigging</h3><p>Components loaded onto automated jigs</p></div>
+      <div class="process-step stagger"><div class="pnum">02</div><h3>Soak Degreasing</h3><p>Oil and grease removal</p></div>
+      <div class="process-step stagger"><div class="pnum">03</div><h3>Anodic Cleaning</h3><p>Electrochemical surface prep</p></div>
+      <div class="process-step stagger"><div class="pnum">04</div><h3>Acid Pickling</h3><p>Oxide and scale removal</p></div>
+      <div class="process-step stagger"><div class="pnum">05</div><h3>Zinc Plating</h3><p>10,000L acid zinc bath — 25 mins</p></div>
+      <div class="process-step stagger"><div class="pnum">06</div><h3>Bright Dipping</h3><p>Surface lustre enhancement</p></div>
+      <div class="process-step stagger"><div class="pnum">07</div><h3>Yellow Passivation</h3><p>Corrosion resistance coating</p></div>
+      <div class="process-step stagger"><div class="pnum">08</div><h3>Sealant &amp; Drying</h3><p>Hot-air oven finishing</p></div>
+      <div class="process-step filler"></div>
+      <div class="process-step filler"></div>
+      <div class="process-step filler"></div>
+      <div class="process-step filler"></div>
+    </div>
+  </div>
+</section>
+</div>
+<!-- END PROCESS VIEW -->
 
-  // Smooth-scroll for in-page nav links (fallback for older browsers already covered by CSS)
-  document.querySelectorAll('a[href^="#"]').forEach(function(link){
-    link.addEventListener('click', function(e){
-      var id = this.getAttribute('href').slice(1);
-      var target = document.getElementById(id);
-      if(target){
-        e.preventDefault();
-        target.scrollIntoView({behavior:'smooth', block:'start'});
-      }
-    });
-  });
+<!-- PRODUCTS VIEW -->
+<div id="view-products" class="view">
+<section id="products">
+  <div class="container">
+    <div class="products-head ">
+      <div class="eyebrow">What We Plate</div>
+      <h2>Automotive Components</h2>
+      <p>We specialize in zinc electroplating for precision automotive components, serving brake system and chassis parts for India's leading OEM suppliers.</p>
+    </div>
+    <div class="product-grid">
+      <div class="product-card stagger">
+        <div class="product-thumb"><img src="galary/caliper.jpeg" alt="Brake Caliper"></div>
+        <div class="product-body">
+          <h3>Brake Caliper</h3>
+          <p>High-precision caliper zinc plating for hydraulic disc brake systems. Capacity: 3 Lakhs/month.</p>
+          <span class="tag-pill">3L units / month</span>
+        </div>
+      </div>
+      <div class="product-card stagger">
+        <div class="product-thumb"><img src="galary/carrier.jpeg" alt="Brake Carrier"></div>
+        <div class="product-body">
+          <h3>Brake Carrier</h3>
+          <p>Structural carrier bracket zinc plating for disc brake assembly mounting.</p>
+          <span class="tag-pill">3L units / month</span>
+        </div>
+      </div>
+      <div class="product-card stagger">
+        <div class="product-thumb"><img src="galary/wheel_wrench.jpeg" alt="Wheel Wrench"></div>
+        <div class="product-body">
+          <h3>Wheel Wrench</h3>
+          <p>Chrome-finish alternative using zinc plating for wheel change tools.</p>
+          <span class="tag-pill">Custom volumes</span>
+        </div>
+      </div>
+      <div class="product-card stagger">
+        <div class="product-thumb"><img src="galary/screw_rod.jpeg" alt="Screw Rod"></div>
+        <div class="product-body">
+          <h3>Screw Rod</h3>
+          <p>Threaded zinc-plated screw rods for mechanical assemblies requiring corrosion resistance.</p>
+          <span class="tag-pill">Custom volumes</span>
+        </div>
+      </div>
+      <div class="product-card stagger">
+        <div class="product-thumb"><img src="galary/bracket.jpeg" alt="Mounting Bracket"></div>
+        <div class="product-body">
+          <h3>Mounting Bracket</h3>
+          <p>Structural mounting bracket component finished with uniform zinc plating for long-term corrosion protection.</p>
+          <span class="tag-pill">Custom volumes</span>
+        </div>
+      </div>
+      <div class="product-card stagger">
+        <div class="product-thumb"><img src="galary/mass_damper.jpeg" alt="Mass Damper"></div>
+        <div class="product-body">
+          <h3>Mass Damper</h3>
+          <p>Vibration-damping mass component zinc plated for enhanced surface protection and durability.</p>
+          <span class="tag-pill">Custom volumes</span>
+        </div>
+      </div>
+      <div class="product-card stagger">
+        <div class="product-thumb"><img src="galary/fastners.jpeg" alt="Fasteners"></div>
+        <div class="product-body">
+          <h3>Fasteners</h3>
+          <p>Nuts, bolts, screws and washers zinc plated for superior corrosion resistance across assemblies.</p>
+          <span class="tag-pill">Custom volumes</span>
+        </div>
+      </div>
+      <div class="product-card stagger">
+        <div class="product-thumb"><img src="galary/flange_bolt.jpeg" alt="Flange Bolt"></div>
+        <div class="product-body">
+          <h3>Flange Bolt</h3>
+          <p>High-strength flange bolts zinc plated for secure, corrosion-resistant fastening in automotive assemblies.</p>
+          <span class="tag-pill">Custom volumes</span>
+        </div>
+      </div>
+      <div class="product-card stagger">
+        <div class="product-thumb"><img src="galary/rim_spacer.jpeg" alt="Rim Spacer"></div>
+        <div class="product-body">
+          <h3>Rim Spacer</h3>
+          <p>Precision-machined rim spacer with uniform zinc coating for reliable wheel-mounting performance.</p>
+          <span class="tag-pill">Custom volumes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<!-- END PRODUCTS VIEW -->
 
-  // Product card active-state toggle
-  document.querySelectorAll('.product-card').forEach(function(card){
-    card.addEventListener('click', function(){
-      document.querySelectorAll('.product-card').forEach(function(c){ c.classList.remove('active'); });
-      card.classList.add('active');
-    });
-  });
+<!-- FACILITIES VIEW -->
+<div id="view-facilities" class="view">
+<section class="section-light" id="facilities">
+  <div class="container">
+    <div class="facilities-head ">
+      <div class="eyebrow">Infrastructure</div>
+      <h2>World-Class Facilities</h2>
+    </div>
+    <p class="facilities-intro">Our plant at Thirumazhisai is equipped with the latest automated systems, advanced lab instruments, and redundant power supply for uninterrupted production.</p>
+    <div class="facilities-grid">
+      <div class="facility-list">
+        <div class="facility-item">
+          <div class="facility-icon">▦</div>
+          <div>
+            <h3>Zinc Bath — Automated Conveyor</h3>
+            <p>Two 10,000-litre acid zinc plating tanks with automated GRAUER &amp; WEIL wagon conveyor system (1.5 ton each).</p>
+          </div>
+        </div>
+        <div class="facility-item">
+          <div class="facility-icon">◨</div>
+          <div>
+            <h3>Advanced Laboratory</h3>
+            <p>In-house lab for Hull Cell testing, pH monitoring, and process concentration analysis across all plating stages.</p>
+          </div>
+        </div>
+        <div class="facility-item">
+          <div class="facility-icon">⚡</div>
+          <div>
+            <h3>Power Backup — 500 KVA</h3>
+            <p>CATERPILLAR 500 KVA generator ensures zero downtime. ATLAS COPCO GX5FF 5 KW screw compressor for air supply.</p>
+          </div>
+        </div>
+        <div class="facility-item">
+          <div class="facility-icon">◎</div>
+          <div>
+            <h3>PLC Control System</h3>
+            <p>Fully PLC-programmed automated system with electrical rectifier units for precise current control and reproducibility.</p>
+          </div>
+        </div>
+      </div>
 
-  // Enquiry form submit — sends data to the backend API (server/server.js)
-  var form = document.getElementById('enquiry-form');
-  var msg = document.getElementById('form-msg');
-  var API_BASE = 'https://premier-industries-1.onrender.com'; // Render backend URL
+      <div class="capacity-card animate up">
+        <h3>Production Capacity</h3>
+        <div class="cap-row">
+          <div class="cap-top"><span>Calipers</span><span><strong class="count-up" data-target="300000" data-format="indian">0</strong><span class="unit">units/month</span></span></div>
+          <div class="bar-track"><div class="bar-fill" style="--target:92%"></div></div>
+        </div>
+        <div class="cap-row">
+          <div class="cap-top"><span>Carriers</span><span><strong class="count-up" data-target="300000" data-format="indian">0</strong><span class="unit">units/month</span></span></div>
+          <div class="bar-track"><div class="bar-fill" style="--target:92%"></div></div>
+        </div>
+        <div class="cap-row">
+          <div class="cap-top"><span>Total Employees</span><span><strong class="count-up" data-target="100">0</strong><span class="unit">people</span></span></div>
+          <div class="bar-track"><div class="bar-fill" style="--target:60%"></div></div>
+        </div>
+        <div class="cap-row">
+          <div class="cap-top"><span>Plating Cycle Time</span><span><strong class="count-up" data-target="25">0</strong><span class="unit">minutes</span></span></div>
+          <div class="bar-track"><div class="bar-fill" style="--target:35%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<!-- END FACILITIES VIEW -->
 
-  if(form){
-    form.addEventListener('submit', function(e){
-      e.preventDefault();
+<!-- CLIENTS VIEW -->
+<div id="view-clients" class="view">
+<section id="clients">
+  <div class="container">
+    <div class="clients-head animate left">
+      <div class="eyebrow">Trusted By</div>
+      <h2>Our Major Customers</h2>
+      <p>From India's largest automotive OEMs to specialized Tier 1 suppliers, Premier Industries serves the full breadth of the country's auto components ecosystem.</p>
+    </div>
+    <div class="client-grid">
+      <div class="client-card stagger"><div class="client-avatar">
+        <a href="https://www.anandgroupindia.com/mandoautomotiveindia/" target="_blank" rel="noopener noreferrer">MA</a>
+      </div><div class="cname">Mando Automotive India Pvt. Ltd.</div></div>
+      <div class="client-card stagger"><div class="client-avatar">
+        <a  href="https://www.sathyaauto.com/" target="_blank" rel="noopener noreferrer">SA</a>
+      </div><div class="cname">Sathya Auto Pvt Ltd (Unit 1 &amp; 3)</div></div>
+      <div class="client-card stagger"><div class="client-avatar">
+        <a  href="https://www.moonlightstampings.com/" target="_blank" rel="noopener noreferrer">ML</a>
+      </div><div class="cname">Moonlight Automotive Pvt. Ltd.</div></div>
+      <div class="client-card stagger"><div class="client-avatar">
+        <a  href="" target="_blank" rel="noopener noreferrer">EP</a>
+      </div><div class="cname">Essay Pressings (INFAC)</div></div>
+      <div class="client-card stagger"><div class="client-avatar">
+        <a  href="" target="_blank" rel="noopener noreferrer">ZT</a>
+      </div><div class="cname">Zoomer Technologies Pvt Ltd (SL Lumax)</div></div>
+      <div class="client-card stagger"><div class="client-avatar">
+        <a  href="http://www.keerthiindustries.com/" target="_blank" rel="noopener noreferrer">KI</a>
+      </div><div class="cname">Keerthi Industries</div></div>
+      <div class="client-card stagger"><div class="client-avatar">
+        <a  href="" target="_blank" rel="noopener noreferrer">MK</a>
+      </div><div class="cname">MK TRON</div></div>
+      <div class="client-card stagger"><div class="client-avatar">
+        <a  href="https://www.nashindia.com/" target="_blank" rel="noopener noreferrer">NI</a>
+      </div><div class="cname">Nash Industries</div></div>
+    </div>
+  </div>
+</section>
 
-      var payload = {
-        name: document.getElementById('fname').value,
-        company: document.getElementById('fcompany').value,
-        email: document.getElementById('femail').value,
-        phone: document.getElementById('fphone').value,
-        component: document.getElementById('fcomponent').value,
-        message: document.getElementById('fmsg').value
-      };
+<!-- OEM STRIP -->
+<div class="oem-strip">
+  <div class="container oem-inner">
+    <div class="oem-left">
+      <span class="lbl">OEM Approved Vendor for</span>
+      <div class="oem-chips">
+        <span class="approved-chip">
+            <a href="https://www.hyundai.com/in/en" target="_blank" rel="noopener noreferrer">HYUNDAI</a>
+          </span>
+          <span class="approved-chip">
+            <a href="https://www.kia.com/in/home.html" target="_blank" rel="noopener noreferrer">KIA MOTORS</a>
+          </span>
+          <span class="approved-chip">
+            <a href="https://www.tafe.com/" target="_blank" rel="noopener noreferrer">TAFE</a>
+          </span>
+      </div>
+    </div>
+    <div class="oem-note">Supervision by Mando India Limited · Support by Hyundai Motor India</div>
+  </div>
+</div>
 
-      var submitBtn = form.querySelector('.submit-btn');
-      var originalText = submitBtn ? submitBtn.textContent : '';
-      if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+<!-- CERTS -->
+<section class="section-light">
+  <div class="container">
+    <div class="certs-head">
+      <div class="eyebrow">Quality Assurance</div>
+      <h2>Recognized for Excellence</h2>
+      <p>Our certifications reflect our unwavering commitment to quality management, automotive industry standards, and environmental health &amp; safety compliance.</p>
+    </div>
+    <div class="cert-grid">
+      <div class="cert-card animate popup">
+        <div class="cert-badge">ISO<br>9001</div>
+        <h3>ISO 9001:2015</h3>
+        <p>TÜV SÜD South Asia certified Quality Management System for providing electroplating services to automobile and general engineering industries.</p>
+        <span class="cert-pill">Since 2006 · TÜV SÜD Certified</span>
+      </div>
+      <div class="cert-card animate popup">
+        <div class="cert-badge">IATF<br>16949</div>
+        <h3>IATF 16949</h3>
+        <p>Automotive industry quality management system certification — the highest standard for automotive supply chain quality, certified by TÜV SÜD Management Service GmbH.</p>
+        <span class="cert-pill">Issued 2022 · Certificate No. 0463383</span>
+      </div>
+      <div class="cert-card animate popup">
+        <div class="cert-badge">SQ<br>MARK</div>
+        <h3>SQ Certificate</h3>
+        <p>Special Process Plating certification (HMI/SQ/005) issued for outstanding performance in Quality Management System evaluation. Supervised by Mando India Limited.</p>
+        <span class="cert-pill">Hyundai Motor India Supported</span>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<!-- END CLIENTS VIEW -->
 
-      fetch(API_BASE + '/api/enquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-        .then(function(res){ return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
-        .then(function(result){
-          if(result.ok){
-            msg.textContent = "Thanks — your enquiry has been noted. We'll be in touch shortly.";
-            msg.classList.add('show');
-            form.reset();
-          } else {
-            msg.textContent = result.data.error || 'Something went wrong. Please try again.';
-            msg.classList.add('show');
-          }
-        })
-        .catch(function(){
-          msg.textContent = 'Could not reach the server. Please check your connection and try again.';
-          msg.classList.add('show');
-        })
-        .finally(function(){
-          if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = originalText; }
-          setTimeout(function(){ msg.classList.remove('show'); }, 5000);
-        });
-    });
-  }
+<!-- CONTACT VIEW -->
+<div id="view-contact" class="view">
+<section id="contact">
+  <div class="container">
+    <div class="contact-head">
+      <div class="eyebrow">Get In Touch</div>
+      <h2>Let's Work Together</h2>
+      <p>Looking for a reliable zinc electroplating partner for your automotive supply chain? We'd love to discuss your requirements.</p>
+    </div>
 
-  // ---------------------------------------------------------------
-  // Scroll animations — Intersection Observer
-  // Reveals .animate / .stagger elements once as they enter the
-  // viewport. Stagger delays (150-200ms) are computed automatically
-  // per sibling group so card grids cascade in.
-  // ---------------------------------------------------------------
-  (function initScrollAnimations(){
-    var staggerEls = document.querySelectorAll('.stagger');
-    var groups = new Map();
+    <div class="contact-grid animate popup">
+      <div class="contact-info-block">
+        <div class="info-item">
+          <div class="info-icon">📍</div>
+          <div>
+            <div class="info-label">Address</div>
+            <div class="info-text">No. 171, SIDCO Industrial Estate,<br>Thirumazhisai, Chennai – 600 124,<br>Tamil Nadu, India</div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon">📞</div>
+          <div>
+            <div class="info-label">Phone</div>
+            <div class="info-text"><a href="tel:+919444159454">+91 - 94441 59454</a><br><a href="tel:+919600166883">+91 - 96001 66883</a></div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon">✉️</div>
+          <div>
+            <div class="info-label">Email</div>
+            <div class="info-text"><a href="mailto:premierindustries171@gmail.com">premierindustries171@gmail.com</a></div>
+          </div>
+        </div>
+        <div class="partners-card">
+          <div class="partners-label">Managing Partners</div>
+          <div class="partners-row">
+            <div class="partner"><div class="partner-avatar">GS</div><div class="pname">Mr. G. Shanmugam</div></div>
+            <div class="partner"><div class="partner-avatar">KA</div><div class="pname">Mr. K. Asokan</div></div>
+          </div>
+        </div>
+      </div>
 
-    staggerEls.forEach(function(el){
-      var parent = el.parentElement;
-      if(!groups.has(parent)) groups.set(parent, []);
-      groups.get(parent).push(el);
-    });
+      <div class="form-card">
+        <h3>Send an Enquiry</h3>
+        <form id="enquiry-form">
+          <div class="field">
+            <label for="fname">Your Name</label>
+            <input type="text" id="fname" placeholder="Full name" required>
+          </div>
+          <div class="field">
+            <label for="fcompany">Company</label>
+            <input type="text" id="fcompany" placeholder="Company name">
+          </div>
+          <div class="field">
+            <label for="femail">Email Address</label>
+            <input type="email" id="femail" placeholder="you@company.com" required>
+          </div>
+          <div class="field">
+            <label for="fphone">Phone</label>
+            <input type="tel" id="fphone" placeholder="+91 XXXXX XXXXX">
+          </div>
+          <div class="field">
+            <label for="fcomponent">Component Type</label>
+            <select id="fcomponent">
+              <option value="">Select component...</option>
+              <option>Brake Caliper</option>
+              <option>Brake Carrier</option>
+              <option>Retainer</option>
+              <option>Wheel Wrench</option>
+              <option>Screw Rod</option>
+              <option>Cam Locker</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="fmsg">Message / Requirements</label>
+            <textarea id="fmsg" placeholder="Describe your plating requirements, volumes, specifications..."></textarea>
+          </div>
+          <button type="submit" class="submit-btn">Send Enquiry →</button>
+          <div class="form-msg" id="form-msg">Thanks — your enquiry has been noted. We'll be in touch shortly.</div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<!-- END CONTACT VIEW -->
 
-    groups.forEach(function(members){
-      members.forEach(function(el, i){
-        el.style.transitionDelay = (i * 160) + 'ms';
-      });
-    });
+<!-- FOOTER -->
+<footer class="animate fade">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="brand" onclick="showView('view-landing'); return false;">
+          <div class="logo-box"><img class="brand-logo" src="galary/logo.png" alt="Premier Industries logo"></div>
+          <div class="brand-text">
+            <div class="name">Premier Industries</div>
+            <div class="tag">ZINC ELECTROPLATING SPECIALISTS</div>
+          </div>
+        </div>
+        <p>Established 1995. Trusted by India's top automotive OEMs for precision zinc electroplating services. ISO 9001:2015 &amp; IATF 16949 certified.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="#" onclick="showView('view-products'); return false;">Zinc Electroplating</a></li>
+          <li><a href="#" onclick="showView('view-products'); return false;">Acid Zinc Nickel Plating</a></li>
+          <li><a href="#" onclick="showView('view-products'); return false;">Yellow Passivation</a></li>
+          <li><a href="#" onclick="showView('view-process'); return false;">Surface Treatment</a></li>
+          <li><a href="#" onclick="showView('view-facilities'); return false;">Quality Inspection</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#" onclick="showView('view-about'); return false;">About Us</a></li>
+          <li><a href="#" onclick="showView('view-process'); return false;">Our Process</a></li>
+          <li><a href="#" onclick="showView('view-facilities'); return false;">Facilities</a></li>
+          <li><a href="#" onclick="showView('view-clients'); return false;">Customers</a></li>
+          <li><a href="#" onclick="showView('view-clients'); return false;">Certifications</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="tel:+919444159454">+91 94441 59454</a></li>
+          <li><a href="tel:+919600166883">+91 96001 66883</a></li>
+          <li><a href="mailto:premierindustries171@gmail.com">premierindustries171@gmail.com</a></li>
+          <li>171, SIDCO Thirumazhisai</li>
+          <li>Chennai – 600 124</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2024 Premier Industries. All rights reserved.</span>
+      <span>ISO 9001:2015 · IATF 16949 · SQ Certified</span>
+    </div>
+  </div>
+</footer>
 
-    var targets = document.querySelectorAll('.animate:not(.capacity-card), .stagger, .tl-reveal');
-
-    if(!('IntersectionObserver' in window)){
-      // Fallback: just show everything immediately
-      targets.forEach(function(el){ el.classList.add('show'); });
-      return;
-    }
-
-    var observer = new IntersectionObserver(function(entries, obs){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting){
-          entry.target.classList.add('show');
-          obs.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold: 0.15,
-      rootMargin: '0px 0px -60px 0px'
-    });
-
-    targets.forEach(function(el){ observer.observe(el); });
-  })();
-
-  // ---------------------------------------------------------------
-  // Mobile nav toggle — hamburger opens/closes the dropdown menu.
-  // Closes automatically on link click, outside click, Escape, or
-  // if the viewport is resized back up to desktop width.
-  // ---------------------------------------------------------------
-  (function initMobileNav(){
-    var nav = document.querySelector('.site-nav');
-    var toggle = document.getElementById('nav-toggle');
-    var links = document.getElementById('nav-links');
-    if(!nav || !toggle || !links) return;
-
-    function closeMenu(){
-      nav.classList.remove('nav-open');
-      toggle.setAttribute('aria-expanded', 'false');
-    }
-    function openMenu(){
-      nav.classList.add('nav-open');
-      toggle.setAttribute('aria-expanded', 'true');
-    }
-
-    toggle.addEventListener('click', function(){
-      if(nav.classList.contains('nav-open')) closeMenu(); else openMenu();
-    });
-
-    links.querySelectorAll('a').forEach(function(a){
-      a.addEventListener('click', closeMenu);
-    });
-
-    document.addEventListener('click', function(e){
-      if(nav.classList.contains('nav-open') && !nav.contains(e.target)) closeMenu();
-    });
-
-    document.addEventListener('keydown', function(e){
-      if(e.key === 'Escape') closeMenu();
-    });
-
-    window.addEventListener('resize', function(){
-      if(window.innerWidth > 960) closeMenu();
-    });
-  })();
-
-  // ---------------------------------------------------------------
-  // Sticky nav — adds a shadow/condensed state once the page scrolls
-  // ---------------------------------------------------------------
-  (function initNavScroll(){
-    var nav = document.querySelector('.site-nav');
-    if(!nav) return;
-    function onScroll(){
-      if(window.scrollY > 8){
-        nav.classList.add('scrolled');
-      } else {
-        nav.classList.remove('scrolled');
-      }
-    }
-    onScroll();
-    window.addEventListener('scroll', onScroll, {passive:true});
-  })();
-
-  // ---------------------------------------------------------------
-  // Count-up numbers — animates any [data-target] element from 0 to
-  // its target once it scrolls into view. Supports data-format="indian"
-  // for lakh-style comma grouping (e.g. 300000 -> 3,00,000).
-  // ---------------------------------------------------------------
-  (function initCountUp(){
-    var els = document.querySelectorAll('.count-up[data-target]');
-    if(!els.length) return;
-
-    function formatIndian(n){
-      var s = String(Math.round(n));
-      if(s.length <= 3) return s;
-      var last3 = s.slice(-3);
-      var rest = s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-      return rest + ',' + last3;
-    }
-
-    function animate(el){
-      var target = parseFloat(el.getAttribute('data-target')) || 0;
-      var format = el.getAttribute('data-format');
-      var duration = 1400;
-      var start = null;
-
-      function frame(ts){
-        if(start === null) start = ts;
-        var progress = Math.min((ts - start) / duration, 1);
-        var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-        var value = target * eased;
-        el.textContent = format === 'indian' ? formatIndian(value) : Math.round(value);
-        if(progress < 1){
-          requestAnimationFrame(frame);
-        } else {
-          el.textContent = format === 'indian' ? formatIndian(target) : target;
-        }
-      }
-      requestAnimationFrame(frame);
-    }
-
-    if(!('IntersectionObserver' in window)){
-      els.forEach(animate);
-      return;
-    }
-
-    var observer = new IntersectionObserver(function(entries, obs){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting){
-          animate(entry.target);
-          obs.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.4 });
-
-    els.forEach(function(el){ observer.observe(el); });
-  })();
-
-  // ---------------------------------------------------------------
-  // Hero "conveyor" — cycles a highlight across the live process
-  // chips (Jigging → Degreasing → ... → Drying) to suggest motion
-  // through an active production line.
-  // ---------------------------------------------------------------
-  (function initHeroConveyor(){
-    var flow = document.getElementById('hero-flow');
-    if(!flow) return;
-    var chips = Array.prototype.slice.call(flow.querySelectorAll('.chip'));
-    var arrows = Array.prototype.slice.call(flow.querySelectorAll('.flow-arrow'));
-    if(!chips.length) return;
-    var i = 0;
-
-    function tick(){
-      chips.forEach(function(c){ c.classList.remove('chip-active'); });
-      arrows.forEach(function(a){ a.classList.remove('arrow-active'); });
-      chips[i].classList.add('chip-active');
-      if(arrows[i - 1]) arrows[i - 1].classList.add('arrow-active');
-      i = (i + 1) % chips.length;
-    }
-    tick();
-    setInterval(tick, 1100);
-  })();
-
-  // ---------------------------------------------------------------
-  // Process flow section — once visible, loops a highlight through
-  // each of the 8 real stages (skips the empty filler cells) to read
-  // like current flowing down the line.
-  // ---------------------------------------------------------------
-  (function initProcessLine(){
-    var grid = document.querySelector('.process-grid');
-    if(!grid) return;
-    var steps = Array.prototype.slice.call(grid.querySelectorAll('.process-step:not(.filler)'));
-    if(!steps.length) return;
-    var i = 0;
-    var intervalId = null;
-
-    function tick(){
-      steps.forEach(function(s){ s.classList.remove('step-active'); });
-      steps[i].classList.add('step-active');
-      i = (i + 1) % steps.length;
-    }
-
-    function start(){
-      if(intervalId) return;
-      tick();
-      intervalId = setInterval(tick, 900);
-    }
-
-    if(!('IntersectionObserver' in window)){
-      start();
-      return;
-    }
-
-    var observer = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting) start();
-      });
-    }, { threshold: 0.3 });
-
-    observer.observe(grid);
-  })();
-
-  // ---------------------------------------------------------------
-  // Replaying progress bars — the capacity-card's .bar-fill elements
-  // fill from 0% to their target width via CSS transition (driven by
-  // the .capacity-card.show rule in style.css). Unlike the generic
-  // .animate/.stagger system, this is NOT one-shot: it resets and
-  // replays every time the card re-enters the viewport, AND on a
-  // full page load/revisit — including browser back/forward restores
-  // from bfcache, which don't re-run scripts on their own.
-  // ---------------------------------------------------------------
-  (function initReplayingBars(){
-    var cards = document.querySelectorAll('.capacity-card');
-    if(!cards.length) return;
-
-    function reset(card){
-      card.classList.remove('show');
-      // Reading a layout property forces the browser to apply the
-      // width:0 state immediately. Without this, removing and
-      // re-adding "show" in the same tick gets batched by the
-      // browser and the transition never visibly restarts.
-      void card.offsetWidth;
-    }
-
-    function play(card){
-      reset(card);
-      // Wait a couple of frames so the reset actually paints before
-      // we re-trigger the transition to the target width.
-      requestAnimationFrame(function(){
-        requestAnimationFrame(function(){
-          card.classList.add('show');
-        });
-      });
-    }
-
-    function isInViewport(card){
-      var rect = card.getBoundingClientRect();
-      return rect.top < window.innerHeight && rect.bottom > 0;
-    }
-
-    if(!('IntersectionObserver' in window)){
-      // Fallback: just fill immediately, no replay capability
-      cards.forEach(function(card){ card.classList.add('show'); });
-      return;
-    }
-
-    // Replays every time a card scrolls into/out of view
-    var observer = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting){
-          play(entry.target);
-        } else {
-          reset(entry.target); // re-arm so it's ready to replay next entry
-        }
-      });
-    }, {
-      threshold: 0.3,
-      rootMargin: '0px 0px -60px 0px'
-    });
-
-    cards.forEach(function(card){ observer.observe(card); });
-
-    // Handles browser back/forward navigation restored from bfcache,
-    // where the page reappears without scripts re-running from scratch.
-    window.addEventListener('pageshow', function(e){
-      if(e.persisted){
-        cards.forEach(function(card){
-          if(isInViewport(card)) play(card); else reset(card);
-        });
-      }
-    });
-  })();
+<script src="script.js"></script>
+</body>
+</html>
