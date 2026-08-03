@@ -1,429 +1,775 @@
-// ---------------------------------------------------------------
-  // Page-style view switching — only one "view" (landing, about,
-  // process, products, facilities, clients, contact) is shown at a
-  // time. Nav links, the logo, footer links, and in-page CTA buttons
-  // all call showView() instead of scrolling to an anchor.
-  // ---------------------------------------------------------------
-  var navLinkMap = {
-    'view-about': 0,
-    'view-process': 1,
-    'view-products': 2,
-    'view-facilities': 3,
-    'view-clients': 4,
-    'view-contact': 5
-  };
-
-  function showView(viewId){
-    var views = document.querySelectorAll('.view');
-    views.forEach(function(v){
-      if(v.id === viewId){
-        // Force a reflow before re-adding the class so the enter
-        // animation restarts every time, even when navigating back
-        // to a view that's already been shown before.
-        v.classList.remove('view-active');
-        void v.offsetWidth;
-        v.classList.add('view-active');
-      } else {
-        v.classList.remove('view-active');
-      }
-    });
-
-    // Update active state on the desktop/mobile nav links
-    var navLinks = document.querySelectorAll('#nav-links .nav-link');
-    navLinks.forEach(function(link){ link.classList.remove('active'); });
-    if(navLinkMap.hasOwnProperty(viewId) && navLinks[navLinkMap[viewId]]){
-      navLinks[navLinkMap[viewId]].classList.add('active');
-    }
-
-    // Reset scroll position for the newly shown "page"
-    window.scrollTo(0, 0);
-
-    // Immediately reveal scroll-triggered animation elements within
-    // the new view, since IntersectionObserver may not have observed
-    // them while the view was display:none.
-    var target = document.getElementById(viewId);
-    if(target){
-      target.querySelectorAll('.animate, .stagger, .tl-reveal').forEach(function(el){
-        el.classList.add('show');
-      });
-      target.querySelectorAll('.capacity-card').forEach(function(card){
-        card.classList.remove('show');
-        void card.offsetWidth;
-        requestAnimationFrame(function(){
-          requestAnimationFrame(function(){ card.classList.add('show'); });
-        });
-      });
-    }
-
-    // Close the mobile nav dropdown if it was open
-    var nav = document.querySelector('.site-nav');
-    if(nav) nav.classList.remove('nav-open');
-    var toggle = document.getElementById('nav-toggle');
-    if(toggle) toggle.setAttribute('aria-expanded', 'false');
+:root{
+    --navy-950:#101b30;
+    --navy-900:#152540;
+    --navy-800:#1b2f4f;
+    --navy-700:#22406e;
+    --blue-500:#2f6fed;
+    --blue-400:#4d8bff;
+    --ink:#1b2740;
+    --slate-500:#5b6b85;
+    --slate-300:#a9b7cc;
+    --bg-light:#e9f0f8;
+    --bg-lighter:#f4f8fc;
+    --white:#ffffff;
+    --amber:#b98a3a;
+    --amber-bg:#fbf1de;
+    --amber-border:#e9d3a3;
+    --green:#3bc47d;
+    --header-bg:#1c1e24;
+    --header-border:rgba(255,255,255,.08);
+    --footer-bg:#15161a;
+    --radius-lg:16px;
+    --radius-md:12px;
+    --radius-sm:8px;
+    --font-display:'Playfair Display', Georgia, serif;
+    --font-body:'Inter', system-ui, sans-serif;
   }
 
-  // Show only the landing view on first load
-  document.addEventListener('DOMContentLoaded', function(){
-    showView('view-landing');
-  });
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:var(--white);
+    -webkit-font-smoothing:antialiased;
+  }
+  img,svg{display:block;max-width:100%;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  .container{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 32px;
+  }
+  section{padding:96px 0;}
+  h1,h2,h3{font-family:var(--font-display);margin:0;line-height:1.15;}
+  p{margin:0;}
 
-  // Smooth-scroll for in-page nav links (fallback for older browsers already covered by CSS)
-  document.querySelectorAll('a[href^="#"]').forEach(function(link){
-    link.addEventListener('click', function(e){
-      var id = this.getAttribute('href').slice(1);
-      var target = document.getElementById(id);
-      if(target){
-        e.preventDefault();
-        target.scrollIntoView({behavior:'smooth', block:'start'});
-      }
-    });
-  });
-
-  // Product card active-state toggle
-  document.querySelectorAll('.product-card').forEach(function(card){
-    card.addEventListener('click', function(){
-      document.querySelectorAll('.product-card').forEach(function(c){ c.classList.remove('active'); });
-      card.classList.add('active');
-    });
-  });
-
-  // Enquiry form submit — sends data to the backend API (server/server.js)
-  var form = document.getElementById('enquiry-form');
-  var msg = document.getElementById('form-msg');
-  var API_BASE = 'https://premier-industries-1.onrender.com'; // Render backend URL
-
-  if(form){
-    form.addEventListener('submit', function(e){
-      e.preventDefault();
-
-      var payload = {
-        name: document.getElementById('fname').value,
-        company: document.getElementById('fcompany').value,
-        email: document.getElementById('femail').value,
-        phone: document.getElementById('fphone').value,
-        component: document.getElementById('fcomponent').value,
-        message: document.getElementById('fmsg').value
-      };
-
-      var submitBtn = form.querySelector('.submit-btn');
-      var originalText = submitBtn ? submitBtn.textContent : '';
-      if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
-
-      fetch(API_BASE + '/api/enquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-        .then(function(res){ return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
-        .then(function(result){
-          if(result.ok){
-            msg.textContent = "Thanks — your enquiry has been noted. We'll be in touch shortly.";
-            msg.classList.add('show');
-            form.reset();
-          } else {
-            msg.textContent = result.data.error || 'Something went wrong. Please try again.';
-            msg.classList.add('show');
-          }
-        })
-        .catch(function(){
-          msg.textContent = 'Could not reach the server. Please check your connection and try again.';
-          msg.classList.add('show');
-        })
-        .finally(function(){
-          if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = originalText; }
-          setTimeout(function(){ msg.classList.remove('show'); }, 5000);
-        });
-    });
+  .eyebrow{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--blue-500);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .eyebrow.on-dark{color:var(--slate-300);}
+  .eyebrow.dot::before{
+    content:"";
+    width:6px;height:6px;border-radius:50%;
+    background:currentColor;
+    display:inline-block;
   }
 
-  // ---------------------------------------------------------------
-  // Scroll animations — Intersection Observer
-  // Reveals .animate / .stagger elements once as they enter the
-  // viewport. Stagger delays (150-200ms) are computed automatically
-  // per sibling group so card grids cascade in.
-  // ---------------------------------------------------------------
-  (function initScrollAnimations(){
-    var staggerEls = document.querySelectorAll('.stagger');
-    var groups = new Map();
+  /* ---------- NAV ---------- */
+  header.site-nav{
+    position:sticky;top:0;z-index:100;
+    background:var(--header-bg);
+    border-bottom:1px solid var(--header-border);
+  }
+  .nav-inner{
+    max-width:1180px;margin:0 auto;padding:10px 0px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .brand{display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .logo-box{
+    flex:none;
+    width:52px;height:52px;
+    display:flex;align-items:center;justify-content:center;
+    background:#fff;
+    border-radius:50%;
+    border:1px solid rgba(16,27,48,.08);
+    overflow:hidden;
+  }
+  .brand-logo{height:46px;width:auto;display:block;}
+  .brand-text .name{font-size:15.5px;font-weight:700;color:#fff;line-height:1.2;}
+  .brand-text .tag{font-size:9.5px;letter-spacing:.12em;color:var(--slate-300);font-weight:600;}
+  nav.links{display:flex;align-items:center;gap:6px;}
+  nav.links a.nav-link{
+    position:relative;
+    font-size:14px;font-weight:500;color:var(--slate-300);
+    border:none;
+    border-radius:999px;
+    padding:9px 16px;
+    transition:color .2s ease, background-color .2s ease;
+  }
+  nav.links a.nav-link:hover{
+    color:#fff;
+    background-color:rgba(255,255,255,.08);
+  }
+  nav.links a.nav-link.active{
+    color:#fff;
+    background-color:rgba(77,139,255,.16);
+  }
+  nav.links a.nav-link:active{
+    background-color:rgba(255,255,255,.12);
+  }
 
-    staggerEls.forEach(function(el){
-      var parent = el.parentElement;
-      if(!groups.has(parent)) groups.set(parent, []);
-      groups.get(parent).push(el);
-    });
+  /* Hamburger toggle — hidden on desktop, shown at the tablet/mobile breakpoint */
+  .nav-toggle{
+    display:none;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:5px;
+    width:38px;height:38px;
+    border-radius:8px;
+    background:transparent;
+    border:1px solid rgba(255,255,255,.14);
+    padding:0;
+  }
+  .nav-toggle span{
+    width:18px;height:2px;background:#fff;border-radius:2px;
+    transition:transform .3s ease, opacity .3s ease;
+  }
+  .site-nav.nav-open .nav-toggle span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+  .site-nav.nav-open .nav-toggle span:nth-child(2){opacity:0;}
+  .site-nav.nav-open .nav-toggle span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:11px 22px;border-radius:8px;
+    font-size:14px;font-weight:600;
+    border:1px solid #255ed6;
+    transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
+    white-space:nowrap;
+    
+    
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--blue-500);color:#fff;}
+  .btn-primary:hover{background:#255ed6;box-shadow:0 8px 20px -8px rgba(47,111,237,.6);}
+  .btn-ghost-dark{background:transparent;border-color:rgba(255,255,255,.18);color:#fff;}
+  .btn-ghost-dark:hover{background:rgba(255,255,255,.06);}
+  .btn-outline{background:transparent;border-color:rgba(27,39,64,.18);color:var(--ink);}
+  .btn-outline:hover{background:rgba(27,39,64,.04);}
 
-    groups.forEach(function(members){
-      members.forEach(function(el, i){
-        el.style.transitionDelay = (i * 160) + 'ms';
-      });
-    });
+  /* ---------- HERO ---------- */
+  .hero{
+    background:radial-gradient(circle at 15% 0%, #1c3560 0%, var(--navy-950) 55%);
+    color:#fff;
+    padding:88px 0 96px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(500px 300px at 90% 15%, rgba(47,111,237,.14), transparent 60%);
+    pointer-events:none;
+  }
+  .hero-grid{
+    display:grid;grid-template-columns:1.05fr .95fr;gap:56px;
+    align-items:start;position:relative;z-index:1;
+  }
+  .badge-pill{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:7px 16px;border-radius:999px;
+    background:rgba(77,139,255,.12);
+    border:1px solid rgba(77,139,255,.35);
+    font-size:11.5px;font-weight:700;letter-spacing:.08em;
+    color:#a9c5ff;text-transform:uppercase;
+    margin-bottom:26px;
+  }
+  .badge-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:#4d8bff;}
+  .hero h1{
+    font-size:52px;font-weight:700;color:#fff;letter-spacing:-.01em;
+    margin-bottom:22px;
+  }
+  .hero h1 .accent{color:#9db8e6;}
+  .hero p.lead{
+    font-size:16.5px;line-height:1.7;color:var(--slate-300);
+    max-width:480px;margin-bottom:34px;
+  }
+  .hero-ctas{display:flex;gap:14px;margin-bottom:52px;}
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,.1);}
+  .stat{padding:22px 22px 0;border-right:1px solid rgba(255,255,255,.1);}
+  .stat:last-child{border-right:none;}
+  .stat .num{font-family:var(--font-display);font-size:30px;font-weight:700;color:#fff;}
+  .stat .num sup{font-size:16px;color:#9db8e6;}
+  .stat .label{font-size:12.5px;color:var(--slate-300);margin-top:4px;}
 
-    var targets = document.querySelectorAll('.animate:not(.capacity-card), .stagger, .tl-reveal');
+  .hero-card{
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:var(--radius-lg);
+    padding:22px;
+    backdrop-filter:blur(6px);
+    margin-bottom:16px;
+  }
+  .live-tag{
+    display:flex;align-items:center;gap:8px;
+    font-size:11.5px;font-weight:700;letter-spacing:.06em;
+    color:#c9d6ea;text-transform:uppercase;margin-bottom:16px;
+  }
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(59,196,125,.18);}
+  .flow-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px;}
+  .chip{
+    padding:7px 13px;border-radius:8px;font-size:12.5px;font-weight:600;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09);color:#dfe8f7;
+  }
+   .chip:hover{
+    padding:7px 13px;border-radius:8px;font-size:12.5px;font-weight:600;
+    background:#f4f0f0ee;border:1px solid rgba(255,255,255,.09);color:#1459d1;
+    cursor:pointer;
+  }
+  .flow-arrow{color:var(--slate-300);font-size:13px;}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip-amber{
+    background:rgba(233,190,120,.12);border:1px solid rgba(233,190,120,.3);
+    color:#e9c98a;
+  }
+  .approved-card{
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:var(--radius-lg);
+    padding:20px 22px;
+  }
+  .approved-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--slate-300);text-transform:uppercase;margin-bottom:12px;}
+  .approved-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .approved-chip{
+    padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:.03em;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#cfd9ea;
+  }
+   .approved-chip:hover{
+    padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:.03em;
+    background:#f4f0f0ee;border:1px solid rgba(255,255,255,.1);color:#1459d1;
+  }
 
-    if(!('IntersectionObserver' in window)){
-      // Fallback: just show everything immediately
-      targets.forEach(function(el){ el.classList.add('show'); });
-      return;
+  /* ---------- ABOUT / STORY ---------- */
+  .section-light{background:var(--bg-light);}
+  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;}
+  .about-copy h2{font-size:36px;color:var(--ink);margin-bottom:18px;}
+  .about-copy p{font-size:15.5px;line-height:1.75;color:var(--slate-500);margin-bottom:36px;max-width:460px;}
+  .timeline{list-style:none;margin:0;padding:0;position:relative;}
+  .timeline li{display:flex;gap:18px;padding-bottom:28px;position:relative;}
+  .timeline li:last-child{padding-bottom:0;}
+  .timeline li::after{
+    content:"";position:absolute;left:20px;top:42px;bottom:0;width:1px;
+    background:rgba(47,111,237,.25);
+  }
+  .timeline li:last-child::after{display:none;}
+  .tl-year{
+    flex:none;width:42px;height:42px;border-radius:50%;
+    background:var(--navy-800);color:#fff;font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;z-index:1;
+  }
+  .tl-body .tl-date{font-size:13.5px;font-weight:700;color:var(--blue-500);margin-bottom:4px;}
+  .tl-body .tl-text{font-size:14.5px;line-height:1.6;color:var(--slate-500);max-width:340px;}
+
+  .feature-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .feature-card{
+    background:#fff; border:rgb(245, 239, 239) solid 1px;border-radius:var(--radius-md);padding:22px;
+    box-shadow:0 1px 2px rgba(20,30,55,.05);
+    
+  }
+  .feature-card:hover{ cursor: pointer;}
+
+  .feature-icon{
+    width:38px;height:38px;border-radius:9px;
+    background:#e4edfb;color:var(--blue-500);
+    display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+  }
+  .feature-card h3{font-family:var(--font-body);font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+  .feature-card p{font-size:13px;line-height:1.55;color:var(--slate-500);}
+
+  /* ---------- PROCESS ---------- */
+  .section-dark{background:var(--navy-950);color:#fff;}
+  .process-head h2{color:#fff;font-size:34px;margin-bottom:14px;}
+  .process-head p{color:var(--slate-300);font-size:15px;line-height:1.7;max-width:600px;margin-bottom:44px;}
+  .process-grid{
+    display:grid;grid-template-columns:repeat(6,1fr);gap:1px;
+    background:rgba(255,255,255,.08);
+    border-radius:var(--radius-lg);
+    overflow:hidden;
+  }
+  .process-step{
+    background:var(--navy-900);
+    padding:26px 20px;
+  }
+  .process-step .pnum{
+    font-family:var(--font-display);font-size:22px;font-weight:700;
+    color:rgba(255,255,255,.28);margin-bottom:14px;
+  }
+  .process-step h3{font-family:var(--font-body);font-size:14.5px;font-weight:700;color:#fff;margin-bottom:6px;}
+  .process-step p{font-size:12px;line-height:1.5;color:var(--slate-300);}
+  .process-step.filler{background:rgba(255,255,255,.02);}
+
+  /* ---------- PRODUCTS ---------- */
+  .products-head h2{font-size:34px;margin-bottom:14px;color:var(--ink);}
+  .products-head p{font-size:15px;color:var(--slate-500);line-height:1.7;max-width:600px;margin-bottom:44px;}
+  .product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .product-card{
+    border-radius:var(--radius-md);overflow:hidden;
+    border:1px solid rgba(27,39,64,.08);
+    background:#fff;
+    transition:box-shadow .2s ease, transform .2s ease;
+    
+
+  }
+  .product-card:hover{box-shadow:0 16px 30px -18px rgba(20,30,55,.25);transform:translateY(-2px); cursor:pointer  }
+  .product-card.active{border-color:var(--blue-400);box-shadow:0 0 0 1px var(--blue-400);}
+  .product-thumb{
+    height:150px;
+    background:linear-gradient(160deg,#dbe6f4);
+    display:flex;align-items:center;justify-content:center;
+    color:#8fa1bd;
+    overflow:hidden;
+  }
+  .product-thumb img{
+    width:100%;height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .product-body{padding:20px;}
+  .product-body h3{font-family:var(--font-body);font-size:15.5px;font-weight:700;margin-bottom:8px;color:var(--ink);}
+  .product-body p{font-size:13.5px;line-height:1.55;color:var(--slate-500);margin-bottom:14px;}
+  .tag-pill{
+    display:inline-block;font-size:11.5px;font-weight:600;color:var(--blue-500);
+    background:#e7effd;padding:5px 11px;border-radius:999px;
+  }
+
+  /* ---------- FACILITIES ---------- */
+  .facilities-head{margin-bottom:20px;}
+  .facilities-head h2{font-size:34px;color:var(--ink);}
+  .facilities-intro{font-size:15px;color:var(--slate-500);line-height:1.7;max-width:640px;margin-bottom:44px;}
+  .facilities-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;}
+  .facility-list{display:flex;flex-direction:column;gap:14px;}
+  .facility-item{
+    display:flex;gap:16px;background:#fff;border-radius:var(--radius-md);
+    padding:20px;box-shadow:0 1px 2px rgba(20,30,55,.05);
+    animation: fade linear;
+    animation-timeline: view();
+    animation-range:entry 0 ;
+  }
+  .facility-icon{
+    flex:none;width:38px;height:38px;border-radius:9px;background:#e4edfb;
+    color:var(--blue-500);display:flex;align-items:center;justify-content:center;
+  }
+  .facility-item h3{font-family:var(--font-body);font-size:15px;font-weight:700;margin-bottom:5px;color:var(--ink);}
+  .facility-item p{font-size:13px;line-height:1.55;color:var(--slate-500);}
+  .capacity-card{
+    background:var(--navy-950);color:#fff;border-radius:var(--radius-lg);
+    padding:30px;
+  }
+  .capacity-card h3{font-family:var(--font-display);font-size:20px;margin-bottom:26px;color:#fff;}
+  .cap-row{margin-bottom:22px;}
+  .cap-row:last-child{margin-bottom:0;}
+  .cap-row .cap-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;color:var(--slate-300);margin-bottom:9px;}
+  .cap-row .cap-top strong{font-family:var(--font-display);font-size:19px;color:#fff;font-weight:700;}
+  .cap-row .cap-top span.unit{font-size:11.5px;color:var(--slate-300);margin-left:5px;font-family:var(--font-body);}
+  .bar-track{height:5px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;}
+  .bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue-400),var(--blue-500));}
+
+  /* ---------- CLIENTS ---------- */
+  .clients-head h2{font-size:34px;color:var(--ink);margin-bottom:14px;}
+  .clients-head p{font-size:15px;color:var(--slate-500);line-height:1.7;max-width:620px;margin-bottom:44px;}
+  .client-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;}
+  .client-card{
+    border:1px solid rgba(27,39,64,.1);border-radius:var(--radius-md);
+    padding:24px 16px;text-align:center;
+    transition:box-shadow .2s ease;
+  }
+  .client-card:hover{box-shadow:0 12px 24px -16px rgba(20,30,55,.2); background-color: #0870b1; }
+  .client-avatar{
+    width:44px;height:44px;border-radius:10px;background:var(--navy-900);color:#fff;
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+    font-family:var(--font-display);font-weight:700;font-size:14px;
+  }
+    .client-avatar{
+    width:44px;height:44px;border-radius:10px;background:var(--navy-900);color:#fff;
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+    font-family:var(--font-display);font-weight:700;font-size:14px;
+  }
+     .client-avatar:hover{
+    width:44px;height:44px;border-radius:10px;background:var(--navy-900);color:#fff;
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+    font-family:var(--font-display);font-weight:700;font-size:14px;cursor:pointer;
+  }
+  
+  .client-card .cname{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4;}
+  .client-card .cname:hover{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4; cursor:pointer;}
+
+  /* ---------- OEM STRIP ---------- */
+  .oem-strip{background:var(--navy-900);color:#fff;padding:26px 0;}
+  .oem-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+  .oem-left{display:flex;align-items:center;gap:16px;}
+  .oem-left .lbl{font-size:12.5px;color:var(--slate-300);font-weight:600;white-space:nowrap;}
+  .oem-chips{display:flex;gap:10px;flex-wrap:wrap;}
+  .oem-chip{
+    padding:8px 15px;border-radius:8px;font-size:12.5px;font-weight:700;letter-spacing:.03em;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e7edf8;
+    display:flex;align-items:center;gap:6px;
+  }
+  .oem-note{font-size:12.5px;color:var(--slate-300);}
+
+  /* ---------- CERTS ---------- */
+  .certs-head h2{font-size:34px;color:var(--ink);margin-bottom:14px;}
+  .certs-head p{font-size:15px;color:var(--slate-500);line-height:1.7;max-width:640px;margin-bottom:44px;}
+  .cert-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .cert-card{
+    background:#fff;border-radius:var(--radius-md);padding:30px 26px;text-align:center;
+    box-shadow:0 1px 2px rgba(20,30,55,.05);
+  }
+  .cert-badge{
+    width:60px;height:60px;border-radius:50%;background:var(--navy-900);color:#fff;
+    display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
+    font-size:10.5px;font-weight:800;line-height:1.25;text-align:center;
+  }
+  .cert-card h3{font-family:var(--font-body);font-size:16px;font-weight:700;margin-bottom:10px;color:var(--ink);}
+  .cert-card p{font-size:13px;line-height:1.6;color:var(--slate-500);margin-bottom:16px;}
+  .cert-pill{
+    display:inline-block;font-size:11.5px;font-weight:700;color:var(--amber);
+    background:var(--amber-bg);border:1px solid var(--amber-border);
+    padding:6px 12px;border-radius:999px;
+  }
+
+  /* ---------- CONTACT ---------- */
+  .contact-grid{display:grid;grid-template-columns:.95fr 1.15fr;gap:56px;align-items:start;margin-top:44px;}
+  .contact-head h2{font-size:34px;color:var(--ink);margin-bottom:14px;}
+  .contact-head p{font-size:15px;color:var(--slate-500);line-height:1.7;max-width:600px;}
+  .contact-info-block{display:flex;flex-direction:column;gap:16px;}
+  .info-item{display:flex;gap:16px;}
+  .info-icon{
+    flex:none;width:38px;height:38px;border-radius:9px;background:#e4edfb;
+    color:var(--blue-500);display:flex;align-items:center;justify-content:center;
+  }
+  .info-item .info-label{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--slate-500);text-transform:uppercase;margin-bottom:5px;}
+  .info-item .info-text{font-size:14.5px;line-height:1.6;color:var(--ink);}
+  .info-item a{color:var(--blue-500);font-weight:600;}
+  .partners-card{
+    background:var(--bg-light);border-radius:var(--radius-md);padding:20px;
+    display:flex;flex-direction:column;gap:12px;
+  }
+  .partners-label{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--slate-500);text-transform:uppercase;}
+  .partners-row{display:flex;gap:22px;}
+  .partner{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .partner-avatar{
+    width:40px;height:40px;border-radius:50%;background:var(--navy-800);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:12.5px;
+  }
+  .partner .pname{font-size:12px;color:var(--ink);font-weight:600;}
+
+  .form-card{
+    background:var(--bg-light);border-radius:var(--radius-lg);padding:32px;
+  }
+  .form-card h3{font-family:var(--font-body);font-size:16px;font-weight:700;margin-bottom:20px;color:var(--ink);}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:7px;}
+  .field input, .field select, .field textarea{
+    width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(27,39,64,.15);
+    background:#fff;font-family:inherit;font-size:14px;color:var(--ink);
+    outline:none;transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(47,111,237,.15);
+  }
+  .field textarea{resize:vertical;min-height:96px;}
+  .submit-btn{
+    width:100%;padding:14px;border-radius:8px;background:var(--navy-950);color:#fff;
+    font-size:14.5px;font-weight:700;border:none;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:background .15s ease;
+  }
+  .submit-btn:hover{background:#0b1526;}
+  .form-msg{margin-top:14px;font-size:13.5px;text-align:center;color:var(--green);display:none;}
+  .form-msg.show{display:block;}
+
+  /* ---------- FOOTER ---------- */
+  footer{background:var(--footer-bg);color:var(--slate-300);padding:64px 0 0;}
+  .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:40px;padding-bottom:44px;}
+  .footer-brand p{font-size:13.5px;line-height:1.7;color:var(--slate-300);margin-top:16px;max-width:280px;}
+  .footer-col h4{font-size:12px;font-weight:700;letter-spacing:.1em;color:#fff;text-transform:uppercase;margin-bottom:18px;}
+  .footer-col ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px;}
+  .footer-col ul li a, .footer-col ul li{font-size:13.5px;color:var(--slate-300);}
+  .footer-col ul li a:hover{color:#fff;}
+  .footer-bottom{
+    border-top:1px solid rgba(255,255,255,.08);
+    padding:22px 0;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    font-size:12.5px;color:var(--slate-300);
+  }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width:960px){
+    section{padding:64px 0;}
+    .hero-grid, .about-grid, .facilities-grid, .contact-grid{grid-template-columns:1fr;}
+    .process-grid{grid-template-columns:repeat(3,1fr);}
+    .process-step.filler{display:none;}
+    .product-grid, .cert-grid{grid-template-columns:repeat(2,1fr);}
+    .client-grid{grid-template-columns:repeat(3,1fr);}
+    .footer-grid{grid-template-columns:1fr 1fr;}
+    .hero h1{font-size:38px;}
+
+    /* Nav becomes a hamburger-triggered dropdown instead of vanishing */
+    .nav-toggle{display:flex;}
+    header.site-nav{position:sticky;}
+    nav.links{
+      position:absolute;
+      top:100%;left:0;right:0;
+      flex-direction:column;
+      align-items:stretch;
+      gap:0;
+      background:var(--header-bg);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      max-height:0;
+      overflow:hidden;
+      opacity:0;
+      padding:0 24px;
+      transition:max-height .35s ease, opacity .3s ease, padding .35s ease;
     }
-
-    var observer = new IntersectionObserver(function(entries, obs){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting){
-          entry.target.classList.add('show');
-          obs.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold: 0.15,
-      rootMargin: '0px 0px -60px 0px'
-    });
-
-    targets.forEach(function(el){ observer.observe(el); });
-  })();
-
-  // ---------------------------------------------------------------
-  // Mobile nav toggle — hamburger opens/closes the dropdown menu.
-  // Closes automatically on link click, outside click, Escape, or
-  // if the viewport is resized back up to desktop width.
-  // ---------------------------------------------------------------
-  (function initMobileNav(){
-    var nav = document.querySelector('.site-nav');
-    var toggle = document.getElementById('nav-toggle');
-    var links = document.getElementById('nav-links');
-    if(!nav || !toggle || !links) return;
-
-    function closeMenu(){
-      nav.classList.remove('nav-open');
-      toggle.setAttribute('aria-expanded', 'false');
+    .site-nav.nav-open nav.links{
+      max-height:420px;
+      opacity:1;
+      padding:8px 24px 22px;
     }
-    function openMenu(){
-      nav.classList.add('nav-open');
-      toggle.setAttribute('aria-expanded', 'true');
+    nav.links a.nav-link{
+      width:100%;
+      padding:14px 6px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      border-radius:0;
     }
+    nav.links a.nav-link:hover{background:transparent;color:#fff;}
+    nav.links a.nav-link.active{background:transparent;color:var(--blue-400);}
+    nav.links .btn{margin-top:14px;width:100%;}
+  }
+  @media (max-width:600px){
+    .container{padding:0 20px;}
+    .process-grid,.product-grid,.cert-grid,.client-grid{grid-template-columns:repeat(2,1fr);}
+    .stat-row{grid-template-columns:1fr;}
+    .stat{border-right:none;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:14px;margin-bottom:14px;}
+    .footer-grid{grid-template-columns:1fr;}
+    .oem-inner{flex-direction:column;align-items:flex-start;}
 
-    toggle.addEventListener('click', function(){
-      if(nav.classList.contains('nav-open')) closeMenu(); else openMenu();
-    });
+    /* Prevent iOS Safari auto-zoom on form focus (needs >=16px) */
+    .field input, .field select, .field textarea{font-size:16px;}
+  }
+  @media (max-width:480px){
+    .feature-cards{grid-template-columns:1fr;}
+    .process-grid{grid-template-columns:repeat(2,1fr);}
+    .hero h1{font-size:32px;}
+  }
 
-    links.querySelectorAll('a').forEach(function(a){
-      a.addEventListener('click', closeMenu);
-    });
+  :focus-visible{outline:2px solid var(--blue-400);outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){
+    .animate, .stagger{opacity:1 !important;transform:none !important;}
+  }
 
-    document.addEventListener('click', function(e){
-      if(nav.classList.contains('nav-open') && !nav.contains(e.target)) closeMenu();
-    });
+  /* ---------- HERO ENTRANCE ---------- */
+  @keyframes heroIn{
+    from{opacity:0; transform:translateY(16px);}
+    to{opacity:1; transform:none;}
+  }
+  .hero-in{
+    opacity:0;
+    animation:heroIn .7s cubic-bezier(.16,.8,.3,1) forwards;
+  }
+  .hero-in-1{animation-delay:.05s;}
+  .hero-in-2{animation-delay:.15s;}
+  .hero-in-3{animation-delay:.25s;}
+  .hero-in-4{animation-delay:.35s;}
+  .hero-in-5{animation-delay:.45s;}
+  .hero-in-6{animation-delay:.2s;}
 
-    document.addEventListener('keydown', function(e){
-      if(e.key === 'Escape') closeMenu();
-    });
+/* =====================================================
+   SCROLL ANIMATIONS
+   Reusable classes: .animate (base) + .fade/.up/.left/.right/.zoom/.popup
+   plus .stagger for card grids. Triggered via Intersection Observer
+   in script.js by toggling the .show class. Runs once per element.
+===================================================== */
 
-    window.addEventListener('resize', function(){
-      if(window.innerWidth > 960) closeMenu();
-    });
-  })();
+.animate,
+.stagger{
+  opacity:0;
+  will-change:opacity, transform;
+  transition:opacity .8s cubic-bezier(.16,.8,.3,1), transform .8s cubic-bezier(.16,.8,.3,1);
+}
 
-  // ---------------------------------------------------------------
-  // Sticky nav — adds a shadow/condensed state once the page scrolls
-  // ---------------------------------------------------------------
-  (function initNavScroll(){
-    var nav = document.querySelector('.site-nav');
-    if(!nav) return;
-    function onScroll(){
-      if(window.scrollY > 8){
-        nav.classList.add('scrolled');
-      } else {
-        nav.classList.remove('scrolled');
-      }
-    }
-    onScroll();
-    window.addEventListener('scroll', onScroll, {passive:true});
-  })();
+/* Directional / effect starting states */
+.animate.fade{transform:none;}
+.animate.up{transform:translateY(48px);}
+.animate.left{transform:translateX(-56px);}
+.animate.right{transform:translateX(56px);}
+.animate.zoom{transform:scale(.92);}
+.animate.zoom.fade{transform:scale(.94);}
+.animate.popup{transform:scale(.9);}
 
-  // ---------------------------------------------------------------
-  // Count-up numbers — animates any [data-target] element from 0 to
-  // its target once it scrolls into view. Supports data-format="indian"
-  // for lakh-style comma grouping (e.g. 300000 -> 3,00,000).
-  // ---------------------------------------------------------------
-  (function initCountUp(){
-    var els = document.querySelectorAll('.count-up[data-target]');
-    if(!els.length) return;
+/* Stagger targets (cards inside grids) start with a subtle rise */
+.stagger{transform:translateY(36px);}
 
-    function formatIndian(n){
-      var s = String(Math.round(n));
-      if(s.length <= 3) return s;
-      var last3 = s.slice(-3);
-      var rest = s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-      return rest + ',' + last3;
-    }
+/* Revealed state — applied by JS when element enters viewport */
+.animate.show,
+.stagger.show{
+  opacity:1;
+  transform:none;
+}
 
-    function animate(el){
-      var target = parseFloat(el.getAttribute('data-target')) || 0;
-      var format = el.getAttribute('data-format');
-      var duration = 1400;
-      var start = null;
+/* =====================================================
+   LIVE / ALWAYS-ON MOTION
+===================================================== */
 
-      function frame(ts){
-        if(start === null) start = ts;
-        var progress = Math.min((ts - start) / duration, 1);
-        var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-        var value = target * eased;
-        el.textContent = format === 'indian' ? formatIndian(value) : Math.round(value);
-        if(progress < 1){
-          requestAnimationFrame(frame);
-        } else {
-          el.textContent = format === 'indian' ? formatIndian(target) : target;
-        }
-      }
-      requestAnimationFrame(frame);
-    }
 
-    if(!('IntersectionObserver' in window)){
-      els.forEach(animate);
-      return;
-    }
+/* Live production dot — pulsing "heartbeat" */
+@keyframes livePulse{
+  0%{box-shadow:0 0 0 0 rgba(59,196,125,.55);}
+  70%{box-shadow:0 0 0 9px rgba(59,196,125,0);}
+  100%{box-shadow:0 0 0 0 rgba(59,196,125,0);}
+}
+.live-dot{
+  animation:livePulse 1.8s ease-out infinite;
+}
 
-    var observer = new IntersectionObserver(function(entries, obs){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting){
-          animate(entry.target);
-          obs.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.4 });
+/* Hero process chips — sequential "conveyor" highlight, driven by JS toggling .chip-active */
+.flow-row .chip{
+  transition:background .45s ease, border-color .45s ease, color .45s ease, transform .45s ease;
+}
+.flow-row .chip.chip-active{
+  background:var(--blue-500);
+  border-color:var(--blue-400);
+  color:#fff;
+  transform:translateY(-2px);
+}
+.flow-row .flow-arrow{
+  display:inline-block;
+  color:#7c8db0;
+  transition:color .45s ease, transform .45s ease;
+}
+.flow-row .flow-arrow.arrow-active{
+  color:var(--blue-400);
+  transform:translateX(3px);
+}
 
-    els.forEach(function(el){ observer.observe(el); });
-  })();
+/* Sticky nav — condenses on scroll */
+.site-nav{
+  transition:box-shadow .3s ease, padding .3s ease, background .3s ease;
+}
+.site-nav.scrolled{
+  box-shadow:0 8px 24px -16px rgba(15,25,45,.35);
+}
 
-  // ---------------------------------------------------------------
-  // Hero "conveyor" — cycles a highlight across the live process
-  // chips (Jigging → Degreasing → ... → Drying) to suggest motion
-  // through an active production line.
-  // ---------------------------------------------------------------
-  (function initHeroConveyor(){
-    var flow = document.getElementById('hero-flow');
-    if(!flow) return;
-    var chips = Array.prototype.slice.call(flow.querySelectorAll('.chip'));
-    var arrows = Array.prototype.slice.call(flow.querySelectorAll('.flow-arrow'));
-    if(!chips.length) return;
-    var i = 0;
+/* Buttons — lift + shadow on hover/focus, not just color */
+.btn, .submit-btn{
+  transition:transform .25s cubic-bezier(.2,.8,.3,1), box-shadow .25s ease, background .25s ease, border-color .25s ease;
+}
+.btn:hover, .submit-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 22px -12px rgba(47,111,237,.45);
+}
+.btn:active, .submit-btn:active{
+  transform:translateY(0);
+  box-shadow:none;
+}
 
-    function tick(){
-      chips.forEach(function(c){ c.classList.remove('chip-active'); });
-      arrows.forEach(function(a){ a.classList.remove('arrow-active'); });
-      chips[i].classList.add('chip-active');
-      if(arrows[i - 1]) arrows[i - 1].classList.add('arrow-active');
-      i = (i + 1) % chips.length;
-    }
-    tick();
-    setInterval(tick, 1100);
-  })();
+/* Process steps — entrance handled by .stagger; this adds a slow, looping
+   "current flowing through the line" highlight once the section is visible */
+.process-step{
+  transition:background .5s ease, border-color .5s ease, transform .3s ease;
+}
+.process-step.step-active{
+  background:rgba(77,139,255,.1);
+  border-color:var(--blue-400);
+}
+.process-step.step-active .pnum{
+  color:var(--blue-400);
+}
+.process-step:not(.filler):hover{
+  transform:translateY(-3px);
+}
 
-  // ---------------------------------------------------------------
-  // Process flow section — once visible, loops a highlight through
-  // each of the 8 real stages (skips the empty filler cells) to read
-  // like current flowing down the line.
-  // ---------------------------------------------------------------
-  (function initProcessLine(){
-    var grid = document.querySelector('.process-grid');
-    if(!grid) return;
-    var steps = Array.prototype.slice.call(grid.querySelectorAll('.process-step:not(.filler)'));
-    if(!steps.length) return;
-    var i = 0;
-    var intervalId = null;
+/* Capacity bars — width animates via JS adding .filled, which reads --target */
+.bar-fill{
+  width:0%;
+  transition:width 1.4s cubic-bezier(.16,.8,.3,1);
+  
+}
+.capacity-card.show .bar-fill{
+  width:var(--target,0%);
+}
 
-    function tick(){
-      steps.forEach(function(s){ s.classList.remove('step-active'); });
-      steps[i].classList.add('step-active');
-      i = (i + 1) % steps.length;
-    }
+/* Feature / cert icons — playful hover */
+.feature-icon, .cert-badge{
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+.feature-card:hover .feature-icon{
+  transform:scale(1.12) rotate(-4deg);
+}
+.cert-card:hover .cert-badge{
+  transform:scale(1.08) rotate(3deg);
+}
 
-    function start(){
-      if(intervalId) return;
-      tick();
-      intervalId = setInterval(tick, 900);
-    }
+/* Client logo cards — soft pop on hover */
+.client-avatar{
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.client-card:hover .client-avatar{
+  transform:scale(1.1);
+}
 
-    if(!('IntersectionObserver' in window)){
-      start();
-      return;
-    }
+/* Timeline — items slide in, dots pop as each reveals */
+.timeline{position:relative;}
+.timeline li.tl-reveal{
+  opacity:0;
+  transform:translateX(-24px);
+  transition:opacity .7s ease, transform .7s ease;
+}
+.timeline li.tl-reveal:nth-child(1){transition-delay:0s;}
+.timeline li.tl-reveal:nth-child(2){transition-delay:.15s;}
+.timeline li.tl-reveal:nth-child(3){transition-delay:.3s;}
+.timeline li.tl-reveal.show{
+  opacity:1;
+  transform:none;
+}
+.tl-year{
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1), background .4s ease;
+}
+.timeline li.tl-reveal.show .tl-year{
+  animation:tlPop .5s cubic-bezier(.34,1.56,.64,1) .15s backwards;
+}
+@keyframes tlPop{
+  from{transform:scale(.4);}
+  to{transform:scale(1);}
+}
 
-    var observer = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting) start();
-      });
-    }, { threshold: 0.3 });
+/* Form success message — animate in instead of hard show/hide */
+.form-msg{
+  opacity:0;
+  transform:translateY(-6px);
+  max-height:0;
+  overflow:hidden;
+  transition:opacity .4s ease, transform .4s ease, max-height .4s ease, margin .4s ease;
+}
+.form-msg.show{
+  opacity:1;
+  transform:none;
+  max-height:80px;
+  margin-top:10px;
+}
 
-    observer.observe(grid);
-  })();
+@media (prefers-reduced-motion: reduce){
+  .live-dot, .tl-year{animation:none !important;}
+}
 
-  // ---------------------------------------------------------------
-  // Replaying progress bars — the capacity-card's .bar-fill elements
-  // fill from 0% to their target width via CSS transition (driven by
-  // the .capacity-card.show rule in style.css). Unlike the generic
-  // .animate/.stagger system, this is NOT one-shot: it resets and
-  // replays every time the card re-enters the viewport, AND on a
-  // full page load/revisit — including browser back/forward restores
-  // from bfcache, which don't re-run scripts on their own.
-  // ---------------------------------------------------------------
-  (function initReplayingBars(){
-    var cards = document.querySelectorAll('.capacity-card');
-    if(!cards.length) return;
+/* =====================================================
+   PAGE / VIEW TRANSITIONS
+   showView() in script.js toggles the .view-active class
+   instead of hard-swapping display, so every "page" change
+   fades and lifts in smoothly rather than snapping instantly.
+===================================================== */
+.view{
+  display:none;
+}
+.view.view-active{
+  display:block;
+  animation:viewEnter .5s cubic-bezier(.16,.8,.3,1);
+}
+@keyframes viewEnter{
+  from{opacity:0; transform:translateY(14px);}
+  to{opacity:1; transform:none;}
+}
 
-    function reset(card){
-      card.classList.remove('show');
-      // Reading a layout property forces the browser to apply the
-      // width:0 state immediately. Without this, removing and
-      // re-adding "show" in the same tick gets batched by the
-      // browser and the transition never visibly restarts.
-      void card.offsetWidth;
-    }
-
-    function play(card){
-      reset(card);
-      // Wait a couple of frames so the reset actually paints before
-      // we re-trigger the transition to the target width.
-      requestAnimationFrame(function(){
-        requestAnimationFrame(function(){
-          card.classList.add('show');
-        });
-      });
-    }
-
-    function isInViewport(card){
-      var rect = card.getBoundingClientRect();
-      return rect.top < window.innerHeight && rect.bottom > 0;
-    }
-
-    if(!('IntersectionObserver' in window)){
-      // Fallback: just fill immediately, no replay capability
-      cards.forEach(function(card){ card.classList.add('show'); });
-      return;
-    }
-
-    // Replays every time a card scrolls into/out of view
-    var observer = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(entry.isIntersecting){
-          play(entry.target);
-        } else {
-          reset(entry.target); // re-arm so it's ready to replay next entry
-        }
-      });
-    }, {
-      threshold: 0.3,
-      rootMargin: '0px 0px -60px 0px'
-    });
-
-    cards.forEach(function(card){ observer.observe(card); });
-
-    // Handles browser back/forward navigation restored from bfcache,
-    // where the page reappears without scripts re-running from scratch.
-    window.addEventListener('pageshow', function(e){
-      if(e.persisted){
-        cards.forEach(function(card){
-          if(isInViewport(card)) play(card); else reset(card);
-        });
-      }
-    });
-  })();
+@media (prefers-reduced-motion: reduce){
+  .view.view-active{animation:none;}
+}
