@@ -318,10 +318,12 @@
     display:flex;align-items:center;justify-content:center;
     color:#8fa1bd;
     overflow:hidden;
+    border-bottom:1px solid rgba(27,39,64,.08);
   }
   .product-thumb img{
     width:100%;height:100%;
-    object-fit:cover;
+    object-fit:contain;
+    background:#fff;
     display:block;
   }
   .product-body{padding:20px;}
