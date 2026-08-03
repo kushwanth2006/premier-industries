@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,14 +26,8 @@ app.use(cors({
   }
 }));
 
-// ---------- Email (Gmail SMTP via nodemailer, using an app password) ----------
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD
-  }
-});
+// ---------- Email (Resend — HTTP API, avoids SMTP ports blocked on Render's free tier) ----------
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ---------- Routes ----------
 
@@ -51,10 +45,10 @@ app.post('/api/enquiry', async (req, res) => {
       return res.status(400).json({ error: 'Name and email are required.' });
     }
 
-    await transporter.sendMail({
-      from: process.env.GMAIL_USER,
+    const result = await resend.emails.send({
+      from: 'Enquiry Bot <onboarding@resend.dev>', // swap to enquiries@yourdomain.com once your domain is verified in Resend
       to: process.env.NOTIFY_EMAIL,
-      replyTo: email, // lets the owner hit "reply" and go straight to the customer
+      reply_to: email, // lets the owner hit "reply" and go straight to the customer
       subject: `New enquiry from ${name}`,
       text: `
 New enquiry received:
@@ -68,11 +62,16 @@ Message: ${message || '-'}
       `.trim()
     });
 
-    console.log('Email sent successfully');
+    if (result.error) {
+      console.error('Email send failed (Resend API error):', JSON.stringify(result.error));
+      return res.status(502).json({ error: 'Could not send your enquiry right now. Please try again.' });
+    }
+
+    console.log('Email sent successfully:', result.data && result.data.id);
     res.status(201).json({ success: true });
   } catch (err) {
-    console.error('Email send failed:', err.message);
-    res.status(502).json({ error: 'Could not send your enquiry right now. Please try again.' });
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 });
 
