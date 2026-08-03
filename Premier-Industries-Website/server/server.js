@@ -1,12 +1,8 @@
 require('dotenv').config();
-const dns = require('dns');
-dns.setServers(['8.8.8.8', '1.1.1.1']); // fixes querySrv ECONNREFUSED on networks whose DNS blocks SRV lookups
 
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const { Resend } = require('resend');
-const Enquiry = require('./models/Enquiry');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,11 +26,6 @@ app.use(cors({
   }
 }));
 
-// ---------- MongoDB ----------
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err.message));
-
 // ---------- Email (Resend — HTTP API, avoids SMTP ports blocked on some hosts) ----------
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -45,7 +36,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Create a new enquiry
+// Receive a new enquiry and email it straight to the owner (no storage)
 app.post('/api/enquiry', async (req, res) => {
   try {
     const { name, company, email, phone, component, message } = req.body;
@@ -54,13 +45,10 @@ app.post('/api/enquiry', async (req, res) => {
       return res.status(400).json({ error: 'Name and email are required.' });
     }
 
-    // 1. Save to MongoDB
-    const enquiry = await Enquiry.create({ name, company, email, phone, component, message });
-
-    // 2. Send email notification via Resend (does not block the response if it fails)
-    resend.emails.send({
-      from: 'Enquiry Bot <onboarding@resend.dev>',
+    const result = await resend.emails.send({
+      from: 'Enquiry Bot <onboarding@resend.dev>', // swap to your verified domain sender once set up in Resend
       to: process.env.NOTIFY_EMAIL,
+      reply_to: email, // lets the owner hit "reply" and go straight to the customer
       subject: `New enquiry from ${name}`,
       text: `
 New enquiry received:
@@ -72,30 +60,18 @@ Phone: ${phone || '-'}
 Component: ${component || '-'}
 Message: ${message || '-'}
       `.trim()
-    }).then(function(result){
-      if(result.error){
-        console.error('Email send failed (Resend API error):', JSON.stringify(result.error));
-      } else {
-        console.log('Email sent successfully:', result.data && result.data.id);
-      }
-    }).catch(function(err){
-      console.error('Email send failed (exception):', err.message);
     });
 
-    res.status(201).json({ success: true, enquiry });
+    if (result.error) {
+      console.error('Email send failed (Resend API error):', JSON.stringify(result.error));
+      return res.status(502).json({ error: 'Could not send your enquiry right now. Please try again.' });
+    }
+
+    console.log('Email sent successfully:', result.data && result.data.id);
+    res.status(201).json({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Something went wrong. Please try again.' });
-  }
-});
-
-// (Optional) list all enquiries — useful for testing / a future admin page
-app.get('/api/enquiry', async (req, res) => {
-  try {
-    const enquiries = await Enquiry.find().sort({ createdAt: -1 });
-    res.json(enquiries);
-  } catch (err) {
-    res.status(500).json({ error: 'Could not fetch enquiries.' });
   }
 });
 
